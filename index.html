@@ -301,7 +301,7 @@ nav.tabs button{position:relative}
 <script>
 const DAY = 864e5, INT = [0, 1, 3, 7, 14, 30], SIZE = 10, UNIT = 10, DEADLINE = "2026-11-21";
 const LS = "latein-vokabeln-v3";
-const LV = { 1: { name: "Leicht", exam: 10 }, 2: { name: "Mittel", exam: 15 }, 3: { name: "Schwer", exam: 20 } };
+const LV = { 1: { name: "Leicht", exam: 10 }, 2: { name: "Mittel", exam: 20 }, 3: { name: "Schwer", exam: 30 } };
 const ZZ = [0, 1, 1.5, 1, 0, -1, -1.5, -1];
 
 const $ = s => document.querySelector(s);
@@ -560,7 +560,7 @@ function mkSteps(cards, kind, lv) {
   // Pro 10 Wörter: 5× Deutsch → Latein, 2× Latein → Deutsch, 3× Schreibweise
   const PLAN = ["dl", "dl", "dl", "dl", "dl", "ld", "ld", "sp", "sp", "sp"];
   const typed = (list, l) => list.map((id, i) => { const t = PLAN[i % PLAN.length]; return t === "sp" ? mkStep("spell", id, null, l) : mkStep("mc", id, t, l); });
-  if (kind === "exam") return shuffle(typed(ids, lv));
+  if (kind === "exam") { const h = Math.ceil(ids.length / 2); return shuffle(ids.map((id, i) => mkStep("mc", id, i < h ? "dl" : "ld", lv))); }
   if (kind !== "lesson") return shuffle(typed(shuffle(ids)));
   const sh = shuffle(ids), tasks = typed(sh), st = [], groups = [];
   for (let k = 0; k < sh.length; k += 5) { const g = sh.slice(k, k + 5); if (g.length >= 3) groups.push({ t: "match", ids: shuffle(g) }); }
