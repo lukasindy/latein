@@ -282,6 +282,11 @@ nav.tabs button{position:relative}
   <button class="btn primary wide" data-act="start-lesson" id="lgo"></button>
   <button class="link wide" data-act="close" data-d="ldlg">Schließen</button></dialog>
 
+<dialog id="edlg"><h2>Pause</h2><p class="dsub" id="es"></p><div class="stack">
+  <button class="btn primary" data-act="e-pause">Pausieren, später weitermachen</button>
+  <button class="btn ghost" data-act="e-eval">Bis jetzt bewerten</button>
+  <button class="link wide" data-act="close" data-d="edlg">Weitermachen</button></div></dialog>
+
 <dialog id="idlg"><h2 id="ih" lang="la"></h2><p class="dsub" id="is"></p><div id="ibody"></div>
   <button class="btn ghost wide" data-act="close" data-d="idlg">Schließen</button></dialog>
 
@@ -336,7 +341,7 @@ const ICON = {
 const stars = (n, s) => [1,2,3].map(i => `<span class="${i <= n ? "" : "off"}">${ICON.star(s)}</span>`).join("");
 
 /* ---------- Daten ---------- */
-function defaultState() { return { v: 4, t: 0, cards: [], done: {}, xp: 0, days: {}, learned: {}, deadline: DEADLINE, lastBackup: 0, mod: 1, exams: {}, cps: {} }; }
+function defaultState() { return { v: 4, t: 0, cards: [], done: {}, xp: 0, days: {}, learned: {}, deadline: DEADLINE, lastBackup: 0, mod: 1, exams: {}, cps: {}, endless: {}, endlessBest: {} }; }
 function migrate(s) {
   if (!s || !Array.isArray(s.cards)) return defaultState();
   const n = Object.assign(defaultState(), s);
@@ -626,6 +631,9 @@ function answer(ok, pick) {
   if (sess.kind === "exam") {
     if (!ok && st.id) sess.wrong.push(st.id);
     sess.ok++; sess.i++;
+    if (sess.endless) { // Stand nach jeder Antwort sichern
+      const e = S.endless[sess.lv]; if (e) { e.i = sess.i; e.correct = sess.correct; e.mistakes = sess.mistakes; e.wrong = sess.wrong; touch(); }
+    }
     if (sess.i >= sess.steps.length) finish();
     render(); window.scrollTo(0, 0);
     return;
@@ -662,10 +670,17 @@ function finish() {
     (lessonsOf(sess.lv)[sess.li] || []).forEach(c => { if (!c.seen) { c.seen = true; c.box = 1; c.due = startOfDay(Date.now()) + DAY; fresh++; } });
     S.learned[today()] = (S.learned[today()] || 0) + fresh;
   } else if (sess.kind === "exam") {
-    xp = sess.correct * 2 + (acc >= 90 ? 10 : 0);
+    xp = sess.endless ? sess.correct : sess.correct * 2 + (acc >= 90 ? 10 : 0);
+    if (sess.endless) {
+      S.endlessBest = S.endlessBest || {};
+      const b = S.endlessBest[sess.lv] || { best: 0 };
+      S.endlessBest[sess.lv] = { best: Math.max(b.best, acc), last: acc, answered: tot, total: sess.base };
+      delete S.endless[sess.lv];
+    } else {
     const store = sess.cp ? (S.cps = S.cps || {}) : S.exams, key = sess.cp ? sess.cp.key : sess.lv;
     const e = store[key] || { best: 0, count: 0, last: 0 };
     store[key] = { best: Math.max(e.best, acc), count: e.count + 1, last: acc };
+    }
   } else xp = sess.firstOk + (sess.kind === "review" || sess.kind === "fix" ? 5 : 0);
   addXP(xp); touch(); updateBadge();
   sess.res = { xp, stars: starsN, acc, streak: streak(), grade: gradeOf(acc),
@@ -781,12 +796,35 @@ function renderReview() {
   $("#view").innerHTML = h;
 }
 
+function startEndless(lv, fresh) {
+  S.endless = S.endless || {};
+  let e = S.endless[lv];
+  if (fresh || !e) {
+    const ids = shuffle(S.cards.filter(c => c.level === lv).map(c => c.id));
+    if (!ids.length) return toast("In diesem Modul gibt es noch keine Wörter");
+    const half = Math.ceil(ids.length / 2);
+    e = S.endless[lv] = { ids, dirs: shuffle(ids.map((_, i) => i < half ? "dl" : "ld")), i: 0, correct: 0, mistakes: 0, wrong: [], started: Date.now() };
+    touch();
+  }
+  const steps = e.ids.map((id, k) => ({ t: "mc", id, d: e.dirs[k], lv }));
+  sess = { from: "exam", kind: "exam", lv, endless: true, steps, i: e.i, ok: e.i, base: steps.length, correct: e.correct, mistakes: e.mistakes,
+    firstOk: 0, tried: new Set(), fb: null, res: null, wrong: [...e.wrong] };
+  document.body.classList.add("insess"); render(); window.scrollTo(0, 0);
+}
+
 function renderExams() {
   let h = `<h2 class="modh" style="margin-top:8px">Prüfungen</h2><p class="help" style="margin-top:4px">Zufällige Wörter aus dem ganzen Modul, ohne Hilfe und ohne Info-Button. Am Ende siehst du deine Note und deine Fehler.</p>`;
   [1, 2, 3].forEach(l => {
     const n = S.cards.filter(c => c.level === l).length, e = S.exams[l];
     h += `<div class="exam"><div><b>${LV[l].name}</b><span>${LV[l].exam} Wörter${e ? `, Bestwert ${e.best} %` : ""}</span><span>${e ? `${e.count}× gemacht, zuletzt ${e.last} %` : n ? "Noch nicht gemacht" : "Noch keine Wörter"}</span></div>
       <button class="btn primary" data-act="exam" data-l="${l}" ${n ? "" : "disabled"}>Starten</button></div>`;
+  });
+  h += `<h3 class="lh" style="margin-top:24px">Endlos-Prüfung</h3><p class="help" style="margin:0 2px 4px">Alle Wörter eines Moduls nacheinander. Du kannst jederzeit pausieren und später weitermachen oder bis zum aktuellen Stand bewerten lassen.</p>`;
+  [1, 2, 3].forEach(l => {
+    const n = S.cards.filter(c => c.level === l).length, e = (S.endless || {})[l], b = (S.endlessBest || {})[l];
+    const done = e ? e.correct + e.mistakes : 0;
+    h += `<div class="exam"><div><b>${LV[l].name}, endlos</b><span>${e ? `Pausiert: ${done} von ${e.ids.length} Wörtern${done ? `, ${Math.round(e.correct / done * 100)} % richtig` : ""}` : `${n} Wörter`}</span>${b ? `<span>Zuletzt ${b.last} % bei ${b.answered} Wörtern</span>` : ""}</div>
+      <div class="stack" style="gap:4px;justify-items:center">${e ? `<button class="btn primary" data-act="endless" data-l="${l}">Weiter</button><button class="link" data-act="endless-new" data-l="${l}" style="min-height:32px;padding:2px 0">Neu starten</button>` : `<button class="btn primary" data-act="endless" data-l="${l}" ${n ? "" : "disabled"}>Starten</button>`}</div></div>`;
   });
   $("#view").innerHTML = h;
 }
@@ -797,8 +835,9 @@ function renderSession() {
   let st = sess.steps[sess.i];
   while (st && st.id && !byId(st.id)) { sess.i++; st = sess.steps[sess.i]; }
   if (!st) { finish(); return renderEnd(v); }
+  if (st.t === "mc" && !st.opts) st.opts = mcOptions(byId(st.id), st.d, st.lv);
   const exam = sess.kind === "exam";
-  let h = `<div class="stop"><button class="x" data-act="quit" aria-label="Beenden">${ICON.x}</button><div class="prog"><i style="width:${Math.min(100, sess.ok / sess.base * 100)}%"></i></div>${exam ? `<span class="muted">${sess.i + 1} / ${sess.base}</span>` : ""}</div>`;
+  let h = `<div class="stop"><button class="x" data-act="quit" aria-label="${sess.endless ? "Pause" : "Beenden"}">${ICON.x}</button><div class="prog"><i style="width:${Math.min(100, sess.ok / sess.base * 100)}%"></i></div>${exam ? `<span class="muted">${sess.i + 1} / ${sess.base}</span>` : ""}</div>`;
   h += ({ intro: stIntro, mc: stMC, match: stMatch, spell: stSpell })[st.t](st);
   if (sess.fb) h += fbBar(st);
   v.innerHTML = h;
@@ -866,9 +905,10 @@ function renderEnd(v) {
   if (k === "exam") {
     const wrong = [...new Set(sess.wrong)].map(byId).filter(Boolean);
     v.innerHTML = `<div class="end">
-      <h2>${sess.cp ? `${sess.cp.name}<br><small class="muted" style="font-size:17px">${LV[sess.lv].name}, Abschnitt ${sess.cp.u + 1}</small>` : `Prüfung ${LV[sess.lv].name}`}</h2>
+      <h2>${sess.endless ? `Endlos-Prüfung ${LV[sess.lv].name}` : sess.cp ? `${sess.cp.name}<br><small class="muted" style="font-size:17px">${LV[sess.lv].name}, Abschnitt ${sess.cp.u + 1}</small>` : `Prüfung ${LV[sess.lv].name}`}</h2>
       <div class="pct" style="color:${r.acc >= 67 ? "var(--good)" : r.acc >= 50 ? "var(--gold)" : "var(--bad)"}">${r.acc} %</div>
-      <span class="grade">Note ${r.grade}, ${sess.correct} von ${sess.base} richtig, ${sess.mistakes} Fehler</span>
+      <span class="grade">Note ${r.grade}, ${sess.correct} von ${sess.endless ? sess.correct + sess.mistakes : sess.base} richtig, ${sess.mistakes} Fehler</span>
+      ${sess.endless ? `<p class="muted" style="margin:4px 0 0">${sess.correct + sess.mistakes} von ${sess.base} Wörtern geprüft</p>` : ""}
       <div class="xpbig" style="font-size:44px;margin:10px 0 18px">+<span id="xpc">${r.xp}</span> XP</div>
       ${r.goal ? `<span class="badge">Tagesziel erreicht</span>` : ""}${r.lvl ? `<span class="badge">Stufe ${r.lvl} erreicht</span>` : ""}
       ${wrong.length ? `<h3 class="lh" style="margin-top:14px">Deine Fehler</h3><ul class="mist">${wrong.map(c => `<li><div><b lang="la">${esc(c.la)}</b><span>${esc(c.de)}</span></div>${ib(c.id)}</li>`).join("")}</ul>` : `<p class="muted">Keine Fehler. Stark!</p>`}
@@ -994,7 +1034,7 @@ async function doExport() {
 }
 function resetProgress() {
   if (!confirm("Lektionen, Prüfungen, XP und Serie zurücksetzen? Die Wörter bleiben erhalten.")) return;
-  S.done = {}; S.xp = 0; S.days = {}; S.exams = {}; S.learned = {}; S.cps = {}; S.cards.forEach(c => { c.seen = false; c.box = 0; c.due = 0; c.miss = 0; c.missN = 0; });
+  S.done = {}; S.xp = 0; S.days = {}; S.exams = {}; S.learned = {}; S.cps = {}; S.endless = {}; S.endlessBest = {}; S.cards.forEach(c => { c.seen = false; c.box = 0; c.due = 0; c.miss = 0; c.missN = 0; });
   touch(); render(); toast("Fortschritt zurückgesetzt");
 }
 
@@ -1012,7 +1052,17 @@ document.addEventListener("click", e => {
     case "badge": enableBadge(); break;
     case "deadline": break;
     case "exam": startExam(+b.dataset.l); break;
-    case "quit": quit(); break;
+    case "quit":
+      if (sess && sess.endless && !sess.res) {
+        const n = sess.correct + sess.mistakes;
+        $("#es").textContent = `${n} von ${sess.base} Wörtern beantwortet${n ? `, ${Math.round(sess.correct / n * 100)} % richtig` : ""}. Dein Stand ist gespeichert.`;
+        $("#edlg").showModal();
+      } else quit();
+      break;
+    case "e-pause": $("#edlg").close(); sess = null; document.body.classList.remove("insess"); curView = "exam"; render(); window.scrollTo(0, 0); toast("Pausiert, du kannst später weitermachen"); break;
+    case "e-eval": $("#edlg").close(); if (!(sess.correct + sess.mistakes)) { toast("Beantworte zuerst mindestens ein Wort"); break; } finish(); render(); window.scrollTo(0, 0); break;
+    case "endless": startEndless(+b.dataset.l, false); break;
+    case "endless-new": if (confirm("Den pausierten Stand verwerfen und neu starten?")) startEndless(+b.dataset.l, true); break;
     case "next": advance(); break;
     case "pick": { if (sess.fb) break; const st = sess.steps[sess.i]; answer(id === st.id, id); break; }
     case "spell": { if (sess.fb) break; const st = sess.steps[sess.i], w = st.opts[+b.dataset.k]; answer(w === st.right, w); break; }
