@@ -381,12 +381,12 @@
 },
 {
 "id": "p19-273",
-"la": "prius, -oris n.",
+"la": "prius, -us n.",
 "de": "das Vorhergehende",
 "level": 1,
 "order": 10042,
 "w": "prius",
-"info": "Wortart: Nomen, 3. Deklination, neutrum\nBedeutung: das Vorhergehende\nAchtung: im Buch steht „prius, -us n.“. Hier steht die korrigierte Form."
+"info": "Wortart: Nomen, u-Deklination (4.), neutrum\nBedeutung: das Vorhergehende"
 },
 {
 "id": "p16-223",
@@ -1588,11 +1588,11 @@
 {
 "id": "p11-141",
 "la": "revisio, -onis f.",
-"de": "Überprüfung, Revision",
+"de": "streitverfangene Sache",
 "level": 1,
 "order": 10176,
 "w": "revisio",
-"info": "Wortart: Nomen, 3. Deklination, feminin\nGenitiv: revisionis\nBedeutung: Überprüfung, Revision\nAchtung: im Buch steht „streitverfangene Sache“. Hier steht die korrigierte Form."
+"info": "Wortart: Nomen, 3. Deklination, feminin\nGenitiv: revisionis\nBedeutung: streitverfangene Sache"
 },
 {
 "id": "p08-104",
@@ -2199,12 +2199,12 @@
 },
 {
 "id": "p18-258",
-"la": "prodigus, -i m.",
+"la": "prodigus, -us m.",
 "de": "Verschwender",
 "level": 1,
 "order": 10244,
 "w": "prodigus",
-"info": "Wortart: Nomen, o-Deklination (2.), maskulin\nGenitiv: prodigi\nBedeutung: Verschwender\nAchtung: im Buch steht „prodigus, -us m.“. Hier steht die korrigierte Form."
+"info": "Wortart: Nomen, u-Deklination (4.), maskulin\nBedeutung: Verschwender"
 },
 {
 "id": "p17-240",
@@ -8283,12 +8283,12 @@
 },
 {
 "id": "p21-290",
-"la": "pignus pignori dari potest",
+"la": "pignus pignore dari potest",
 "de": "ein Pfand kann zum Pfand gegeben werden",
 "level": 3,
 "order": 30072,
-"w": "pignus pignori dari potest",
-"info": "Typ: Rechtsregel / Merksatz\nWörter: pignus = Pfand; potest = kann\nBedeutung: ein Pfand kann zum Pfand gegeben werden\nAchtung: im Buch steht „pignore“. Hier steht die korrigierte Form."
+"w": "pignus pignore dari potest",
+"info": "Typ: Rechtsregel / Merksatz\nWörter: pignus = Pfand; potest = kann\nBedeutung: ein Pfand kann zum Pfand gegeben werden"
 },
 {
 "id": "p20-289",
