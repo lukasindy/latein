@@ -250,6 +250,11 @@ nav.tabs button{position:relative}
 .tabn{position:absolute;top:4px;left:calc(50% + 6px);min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--bad);color:#fff;font-size:11px;font-weight:700;line-height:18px;text-align:center}
 .exam.fix{border:2px solid var(--bad-soft)}
 .exam.fix + .mist{margin-bottom:4px}
+.endstats{grid-template-columns:repeat(3,1fr)}
+.node.cp{width:96px;height:72px;border-radius:22px;background:var(--flame);color:#fff;box-shadow:0 6px 0 color-mix(in srgb,var(--flame) 62%,#000)}
+.node.cp.done{background:var(--gold);box-shadow:0 6px 0 color-mix(in srgb,var(--gold) 65%,#000)}
+.node.cp.locked{background:var(--lock);color:var(--muted);box-shadow:0 6px 0 var(--lock-deep)}
+.cpl{margin-top:10px;font-size:14px;font-weight:700;color:var(--muted);text-align:center;line-height:1.3}
 </style>
 </head>
 <body>
@@ -318,6 +323,7 @@ const norm = s => String(s).toLowerCase().replace(/\(.*?\)/g, " ").replace(/[.,!
 const lvOf = v => { if ([1, 2, 3].includes(+v)) return +v; const t = String(v || "").toLowerCase(); return t.startsWith("m") ? 2 : t.startsWith("s") ? 3 : 1; };
 
 const ICON = {
+  trophy: '<svg width="30" height="30" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M7 3h10v2h3v3a4 4 0 0 1-4 4h-.3A5 5 0 0 1 13 14.9V17h3v3H8v-3h3v-2.1A5 5 0 0 1 8.3 12H8a4 4 0 0 1-4-4V5h3V3zm0 4H6v1a2 2 0 0 0 1 1.7V7zm10 0v2.7A2 2 0 0 0 18 8V7h-1z"/></svg>',
   flame: '<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2c1 3.5-1.6 5.3-3 7.2C7.7 11 7 12.6 7 14.5A5 5 0 0 0 17 15c0-2.4-1.1-4-2.2-5.3.2 1.6-.4 2.8-1.4 3.3.4-3.6-.6-7.6-1.4-11z"/></svg>',
   bolt: '<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M13 2 4 14h6l-1 8 9-12h-6l1-8z"/></svg>',
   check: '<svg width="30" height="30" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>',
@@ -330,7 +336,7 @@ const ICON = {
 const stars = (n, s) => [1,2,3].map(i => `<span class="${i <= n ? "" : "off"}">${ICON.star(s)}</span>`).join("");
 
 /* ---------- Daten ---------- */
-function defaultState() { return { v: 4, t: 0, cards: [], done: {}, xp: 0, days: {}, learned: {}, deadline: DEADLINE, lastBackup: 0, mod: 1, exams: {} }; }
+function defaultState() { return { v: 4, t: 0, cards: [], done: {}, xp: 0, days: {}, learned: {}, deadline: DEADLINE, lastBackup: 0, mod: 1, exams: {}, cps: {} }; }
 function migrate(s) {
   if (!s || !Array.isArray(s.cards)) return defaultState();
   const n = Object.assign(defaultState(), s);
@@ -460,6 +466,18 @@ function lessonsOf(lv) { const cs = sortedLv(lv), out = []; for (let i = 0; i < 
 const dk = (lv, i) => lv + ":" + i;
 const doneOf = (lv, i) => S.done[dk(lv, i)] || 0;
 const isOpen = (lv, i) => i === 0 || doneOf(lv, i - 1) > 0 || doneOf(lv, i) > 0;
+// Prüfungen im Lernpfad (Bonus): Mini nach Lektion 3 und 6, große Prüfung am Ende des Abschnitts
+function cpsOf(lv, u) {
+  const L = lessonsOf(lv), from = u * UNIT, n = Math.min(UNIT, L.length - from), out = [];
+  if (n <= 0) return out;
+  if (n >= 4) out.push({ k: "m1", name: "Mini-Prüfung 1", after: from + 2, a: from, b: from + 2 });
+  if (n >= 7) out.push({ k: "m2", name: "Mini-Prüfung 2", after: from + 5, a: from + 3, b: from + 5 });
+  out.push({ k: "big", name: "Abschnittsprüfung", after: from + n - 1, a: from, b: from + n - 1 });
+  return out.map(c => Object.assign(c, { lv, u, key: `${lv}:${u}:${c.k}` }));
+}
+const cpCards = c => lessonsOf(c.lv).slice(c.a, c.b + 1).flat();
+const cpOpen = c => { for (let i = c.a; i <= c.b; i++) if (!doneOf(c.lv, i)) return false; return true; };
+const cpByKey = key => { const [lv, u] = key.split(":").map(Number); return cpsOf(lv, u).find(c => c.key === key); };
 const dueSeen = () => { const n = Date.now(); return S.cards.filter(c => c.seen && c.due <= n); };
 function streak() {
   const d = new Date(); d.setHours(12, 0, 0, 0);
@@ -645,8 +663,9 @@ function finish() {
     S.learned[today()] = (S.learned[today()] || 0) + fresh;
   } else if (sess.kind === "exam") {
     xp = sess.correct * 2 + (acc >= 90 ? 10 : 0);
-    const e = S.exams[sess.lv] || { best: 0, count: 0, last: 0 };
-    S.exams[sess.lv] = { best: Math.max(e.best, acc), count: e.count + 1, last: acc };
+    const store = sess.cp ? (S.cps = S.cps || {}) : S.exams, key = sess.cp ? sess.cp.key : sess.lv;
+    const e = store[key] || { best: 0, count: 0, last: 0 };
+    store[key] = { best: Math.max(e.best, acc), count: e.count + 1, last: acc };
   } else xp = sess.firstOk + (sess.kind === "review" || sess.kind === "fix" ? 5 : 0);
   addXP(xp); touch(); updateBadge();
   sess.res = { xp, stars: starsN, acc, streak: streak(), grade: gradeOf(acc),
@@ -702,11 +721,16 @@ function renderLearn() {
   for (let u = 0; u * UNIT < L.length; u++) {
     const ls = L.slice(u * UNIT, (u + 1) * UNIT), first = ls[0][0], last = ls[ls.length - 1].slice(-1)[0];
     h += `<section class="unit"><h3>${LV[m].name}, Abschnitt ${u + 1}</h3><p lang="la">${esc(head(first))} bis ${esc(head(last))}</p><div class="path">`;
+    const cps = cpsOf(m, u);
     ls.forEach((ws, k) => {
       const i = u * UNIT + k, st = doneOf(m, i) ? "done" : isOpen(m, i) ? "cur" : "locked";
       h += `<div class="nw" style="--z:${ZZ[i % 8]}">${st === "cur" ? `<span class="bubble">${i === 0 ? "Start" : "Weiter"}</span>` : ""}
         <button class="node ${st}" data-act="lesson" data-i="${i}" aria-label="Lektion ${i + 1}${st === "locked" ? ", gesperrt" : st === "done" ? ", abgeschlossen" : ""}">${st === "done" ? ICON.check : st === "cur" ? ICON.play : ICON.lock}</button>
         ${st === "done" ? `<div class="nstars">${stars(doneOf(m, i), 16)}</div>` : ""}</div>`;
+      cps.filter(c => c.after === i).forEach(c => {
+        const r = S.cps[c.key], open = cpOpen(c), cls = r ? "done" : open ? "cur" : "locked";
+        h += `<div class="nw cpw"><button class="node cp ${cls}" data-act="cp" data-key="${c.key}" aria-label="${c.name}${open ? "" : ", gesperrt"}">${ICON.trophy}</button><span class="cpl">${c.name}${r ? `<br>Bestwert ${r.best} %` : ""}</span></div>`;
+      });
     });
     h += `</div></section>`;
   }
@@ -716,6 +740,17 @@ function renderLearn() {
     const n = $(".node.cur");
     requestAnimationFrame(() => n ? n.scrollIntoView({ block: "center" }) : window.scrollTo(0, 0));
   }
+}
+function openCp(key) {
+  const c = cpByKey(key); if (!c) return;
+  if (!cpOpen(c)) return toast(`Schließ zuerst Lektion ${c.a + 1} bis ${c.b + 1} ab`);
+  lessonSel = { cp: c };
+  const r = S.cps[c.key], n = cpCards(c).length;
+  $("#lt").textContent = `${LV[c.lv].name}, Abschnitt ${c.u + 1}: ${c.name}`;
+  $("#ls").textContent = `${n} Wörter aus Lektion ${c.a + 1} bis ${c.b + 1}. Bonus-Prüfung ohne Hilfe, je zur Hälfte Deutsch → Latein und Latein → Deutsch.${r ? ` Bestwert: ${r.best} %, zuletzt ${r.last} %.` : ""}`;
+  $("#lw").innerHTML = "";
+  $("#lgo").textContent = r ? "Nochmal machen" : "Prüfung starten";
+  $("#ldlg").showModal();
 }
 function openLesson(i) {
   const lv = S.mod, ws = lessonsOf(lv)[i]; if (!ws) return;
@@ -831,9 +866,9 @@ function renderEnd(v) {
   if (k === "exam") {
     const wrong = [...new Set(sess.wrong)].map(byId).filter(Boolean);
     v.innerHTML = `<div class="end">
-      <h2>Prüfung ${LV[sess.lv].name}</h2>
+      <h2>${sess.cp ? `${sess.cp.name}<br><small class="muted" style="font-size:17px">${LV[sess.lv].name}, Abschnitt ${sess.cp.u + 1}</small>` : `Prüfung ${LV[sess.lv].name}`}</h2>
       <div class="pct" style="color:${r.acc >= 67 ? "var(--good)" : r.acc >= 50 ? "var(--gold)" : "var(--bad)"}">${r.acc} %</div>
-      <span class="grade">Note ${r.grade}, ${sess.correct} von ${sess.base} richtig</span>
+      <span class="grade">Note ${r.grade}, ${sess.correct} von ${sess.base} richtig, ${sess.mistakes} Fehler</span>
       <div class="xpbig" style="font-size:44px;margin:10px 0 18px">+<span id="xpc">${r.xp}</span> XP</div>
       ${r.goal ? `<span class="badge">Tagesziel erreicht</span>` : ""}${r.lvl ? `<span class="badge">Stufe ${r.lvl} erreicht</span>` : ""}
       ${wrong.length ? `<h3 class="lh" style="margin-top:14px">Deine Fehler</h3><ul class="mist">${wrong.map(c => `<li><div><b lang="la">${esc(c.la)}</b><span>${esc(c.de)}</span></div>${ib(c.id)}</li>`).join("")}</ul>` : `<p class="muted">Keine Fehler. Stark!</p>`}
@@ -844,7 +879,7 @@ function renderEnd(v) {
       <h2>${lesson ? (sess.replay ? "Lektion wiederholt" : "Lektion geschafft") : k === "practice" ? "Übung geschafft" : k === "fix" ? "Fehler ausgebessert" : "Wiederholung geschafft"}</h2>
       ${lesson ? `<div class="bigstars">${stars(r.stars, 44)}</div>` : ""}
       <div class="xpbig">+<span id="xpc">${r.xp}</span> XP</div>
-      <div class="endstats"><div><b>${r.acc} %</b><span>Genauigkeit</span></div><div><b>${r.streak}</b><span>${r.streak === 1 ? "Tag" : "Tage"} in Folge</span></div></div>
+      <div class="endstats"><div><b>${r.acc} %</b><span>Genauigkeit</span></div><div><b>${sess.mistakes}</b><span>Fehler</span></div><div><b>${r.streak}</b><span>${r.streak === 1 ? "Tag" : "Tage"} in Folge</span></div></div>
       ${r.goal ? `<span class="badge">Tagesziel geschafft</span>` : ""}${r.lvl ? `<span class="badge">Stufe ${r.lvl} erreicht</span>` : ""}
       ${lesson && !sess.replay ? (() => { const p = plan(); return p.over ? "" : `<p class="muted">${p.todayLeft ? `Heute noch ${p.todayLeft} Wörter bis zu deinem Tagesziel.` : "Dein Tagesziel für heute ist erreicht."}</p>`; })() : ""}
       ${k === "fix" ? (() => { const n = S.cards.filter(c => c.miss).length; return `<p class="muted">${n ? `Noch ${n} ${n === 1 ? "Fehler" : "Fehler"} offen.` : "Alle Fehler ausgebessert!"}</p>`; })() : ""}
@@ -959,7 +994,7 @@ async function doExport() {
 }
 function resetProgress() {
   if (!confirm("Lektionen, Prüfungen, XP und Serie zurücksetzen? Die Wörter bleiben erhalten.")) return;
-  S.done = {}; S.xp = 0; S.days = {}; S.exams = {}; S.learned = {}; S.cards.forEach(c => { c.seen = false; c.box = 0; c.due = 0; c.miss = 0; c.missN = 0; });
+  S.done = {}; S.xp = 0; S.days = {}; S.exams = {}; S.learned = {}; S.cps = {}; S.cards.forEach(c => { c.seen = false; c.box = 0; c.due = 0; c.miss = 0; c.missN = 0; });
   touch(); render(); toast("Fortschritt zurückgesetzt");
 }
 
@@ -971,7 +1006,8 @@ document.addEventListener("click", e => {
     case "tab": show(b.dataset.v); break;
     case "mod": S.mod = +b.dataset.l; touch(); scrollCur = true; render(); break;
     case "lesson": openLesson(+b.dataset.i); break;
-    case "start-lesson": $("#ldlg").close(); if (lessonSel) startLesson(lessonSel.lv, lessonSel.i); break;
+    case "start-lesson": $("#ldlg").close(); if (lessonSel) { if (lessonSel.cp) begin("exam", shuffle(cpCards(lessonSel.cp)), { lv: lessonSel.cp.lv, cp: lessonSel.cp }); else startLesson(lessonSel.lv, lessonSel.i); } break;
+    case "cp": openCp(b.dataset.key); break;
     case "review": startReview(b.dataset.m, +b.dataset.l || 0); break;
     case "badge": enableBadge(); break;
     case "deadline": break;
