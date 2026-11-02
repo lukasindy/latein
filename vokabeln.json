@@ -165,12 +165,12 @@
 },
 {
 "id": "p68-1000",
-"la": "aliud",
+"la": "alius",
 "de": "etwas anderes",
 "level": 1,
 "order": 10018,
-"w": "aliud",
-"info": "Wortart: Neutrum von alius (alius, alia, aliud)\nBedeutung: etwas anderes\nAchtung: im Buch steht „alius“ = etwas anderes; alius heißt „ein anderer“. Hier steht die korrigierte Form."
+"w": "alius",
+"info": "Bedeutung: etwas anderes"
 },
 {
 "id": "p65-958",
@@ -1245,12 +1245,12 @@
 },
 {
 "id": "p44-636",
-"la": "humus, -i f.",
+"la": "humus, -i m.",
 "de": "Erde, Boden",
 "level": 1,
 "order": 10138,
 "w": "humus",
-"info": "Wortart: Nomen, o-Deklination (2.), feminin\nGenitiv: humi\nBedeutung: Erde, Boden\nAchtung: im Buch steht „m.“, humus ist feminin. Hier steht die korrigierte Form."
+"info": "Wortart: Nomen, o-Deklination (2.), maskulin\nGenitiv: humi\nBedeutung: Erde, Boden"
 },
 {
 "id": "p35-500",
@@ -1524,12 +1524,12 @@
 },
 {
 "id": "p48-695",
-"la": "fas n. (indekl.)",
+"la": "fas, fari n.",
 "de": "göttliches Recht",
 "level": 1,
 "order": 10169,
 "w": "fas",
-"info": "Wortart: Nomen, neutrum\nBedeutung: göttliches Recht\nAchtung: im Buch steht „fas, fari n.“, fas ist nicht deklinierbar. Hier steht die korrigierte Form."
+"info": "Wortart: Nomen, neutrum\nGenitiv: fari\nBedeutung: göttliches Recht"
 },
 {
 "id": "p48-696",
@@ -1695,12 +1695,12 @@
 },
 {
 "id": "p39-568",
-"la": "iter, itineris n.",
+"la": "iter, -ineris n.",
 "de": "Weg, Wegerecht",
 "level": 1,
 "order": 10188,
 "w": "iter",
-"info": "Wortart: Nomen, 3. Deklination, neutrum\nGenitiv: itineris\nBedeutung: Weg, Wegerecht\nAchtung: im Buch steht „-ineris“. Hier steht die korrigierte Form."
+"info": "Wortart: Nomen, 3. Deklination, neutrum\nBedeutung: Weg, Wegerecht"
 },
 {
 "id": "p36-522",
@@ -1974,12 +1974,12 @@
 },
 {
 "id": "p25-362",
-"la": "orbis, -is m.",
+"la": "orbis, -is f.",
 "de": "Kreis, Umkreis, Erde, Welt",
 "level": 1,
 "order": 10219,
 "w": "orbis",
-"info": "Wortart: Nomen, 3. Deklination, maskulin\nBedeutung: Kreis, Umkreis, Erde, Welt\nAchtung: im Buch steht „f.“, orbis ist maskulin. Hier steht die korrigierte Form."
+"info": "Wortart: Nomen, 3. Deklination, feminin\nBedeutung: Kreis, Umkreis, Erde, Welt"
 },
 {
 "id": "p19-266",
@@ -2847,12 +2847,12 @@
 },
 {
 "id": "p23-332",
-"la": "perfidia, -ae f.",
+"la": "perfidie, -ae f.",
 "de": "Treulosigkeit, Hinterlistigkeit",
 "level": 1,
 "order": 10316,
-"w": "perfidia",
-"info": "Wortart: Nomen, a-Deklination (1.), feminin\nGenitiv: perfidiae\nBedeutung: Treulosigkeit, Hinterlistigkeit\nAchtung: im Buch steht „perfidie“. Hier steht die korrigierte Form."
+"w": "perfidie",
+"info": "Wortart: Nomen, a-Deklination (1.), feminin\nBedeutung: Treulosigkeit, Hinterlistigkeit"
 },
 {
 "id": "p21-304",
@@ -6015,12 +6015,12 @@
 },
 {
 "id": "p37-541",
-"la": "ius puniendi",
+"la": "ius puniende",
 "de": "das Recht zu strafen",
 "level": 2,
 "order": 20251,
-"w": "ius puniendi",
-"info": "Typ: Fachbegriff\nWörter: ius = Recht\nBedeutung: das Recht zu strafen\nAchtung: im Buch steht „puniende“. Hier steht die korrigierte Form."
+"w": "ius puniende",
+"info": "Typ: Fachbegriff\nWörter: ius = Recht\nBedeutung: das Recht zu strafen"
 },
 {
 "id": "p35-512",
@@ -6205,11 +6205,11 @@
 {
 "id": "p31-453",
 "la": "mora solvendi",
-"de": "Leistungsverzug",
+"de": "Annahmeverzug",
 "level": 2,
 "order": 20272,
 "w": "mora solvendi",
-"info": "Typ: Fachbegriff\nWörter: mora = Verzug\nBedeutung: Leistungsverzug\nAchtung: im Buch sind mora accipiendi und mora solvendi vertauscht. Hier steht die korrigierte Form."
+"info": "Typ: Fachbegriff\nWörter: mora = Verzug\nBedeutung: Annahmeverzug"
 },
 {
 "id": "p29-421",
@@ -6564,11 +6564,11 @@
 },
 {
 "id": "p12-159",
-"la": "res religiosae",
+"la": "res religosae",
 "de": "religiöse Sachen",
 "level": 2,
 "order": 20312,
-"w": "res religiosae",
+"w": "res religosae",
 "info": "Typ: Fachbegriff\nWörter: res = Sache\nBedeutung: religiöse Sachen"
 },
 {
@@ -6736,11 +6736,11 @@
 {
 "id": "p31-449",
 "la": "mora accipiendi",
-"de": "Annahmeverzug",
+"de": "Leistungsverzug",
 "level": 2,
 "order": 20331,
 "w": "mora accipiendi",
-"info": "Typ: Fachbegriff\nWörter: mora = Verzug\nBedeutung: Annahmeverzug\nAchtung: im Buch sind mora accipiendi und mora solvendi vertauscht. Hier steht die korrigierte Form."
+"info": "Typ: Fachbegriff\nWörter: mora = Verzug\nBedeutung: Leistungsverzug"
 },
 {
 "id": "p26-366",
@@ -6933,12 +6933,12 @@
 },
 {
 "id": "p36-525",
-"la": "lato sensu",
+"la": "latu sensu",
 "de": "im Weiten, im weiteren Sinn",
 "level": 2,
 "order": 20353,
-"w": "lato sensu",
-"info": "Typ: Fachbegriff\nBedeutung: im Weiten, im weiteren Sinn\nAchtung: im Buch steht „latu sensu“. Hier steht die korrigierte Form."
+"w": "latu sensu",
+"info": "Typ: Fachbegriff\nBedeutung: im Weiten, im weiteren Sinn"
 },
 {
 "id": "p35-507",
@@ -7806,12 +7806,12 @@
 },
 {
 "id": "p71-1053",
-"la": "actio negotiorum gestorum",
+"la": "actio negotorium gestorum",
 "de": "Klage aus der Geschäftsführung ohne Auftrag",
 "level": 3,
 "order": 30019,
-"w": "actio negotiorum gestorum",
-"info": "Typ: Fachbegriff\nWörter: actio = Handlung\nBedeutung: Klage aus der Geschäftsführung ohne Auftrag\nAchtung: im Buch steht „negotorium“. Hier steht die korrigierte Form."
+"w": "actio negotorium gestorum",
+"info": "Typ: Fachbegriff\nWörter: actio = Handlung\nBedeutung: Klage aus der Geschäftsführung ohne Auftrag"
 },
 {
 "id": "p34-485",
@@ -9300,12 +9300,12 @@
 },
 {
 "id": "p55-797",
-"la": "dicat testator et erit lex",
+"la": "dicat testaro et erit lex",
 "de": "der Testator spreche und es wird Gesetz sein",
 "level": 3,
 "order": 30185,
-"w": "dicat testator et erit lex",
-"info": "Typ: Rechtsregel / Merksatz\nWörter: et = und; lex = Gesetz\nBedeutung: der Testator spreche und es wird Gesetz sein\nAchtung: im Buch steht „testaro“. Hier steht die korrigierte Form."
+"w": "dicat testaro et erit lex",
+"info": "Typ: Rechtsregel / Merksatz\nWörter: et = und; lex = Gesetz\nBedeutung: der Testator spreche und es wird Gesetz sein"
 },
 {
 "id": "p46-663",
@@ -9525,12 +9525,12 @@
 },
 {
 "id": "p29-412",
-"la": "ne eat iudex ultra petita partium",
+"la": "ne eat iudex ultra petita patrium",
 "de": "der Richter möge nicht über das Begehren der Parteien hinausgehen",
 "level": 3,
 "order": 30210,
-"w": "ne eat iudex ultra petita partium",
-"info": "Typ: Rechtsregel / Merksatz\nWörter: ne = damit nicht; iudex = Richter; partium = der Parteien (Gen. Pl. von pars)\nBedeutung: der Richter möge nicht über das Begehren der Parteien hinausgehen\nAchtung: im Buch steht „patrium“. Hier steht die korrigierte Form."
+"w": "ne eat iudex ultra petita patrium",
+"info": "Typ: Rechtsregel / Merksatz\nWörter: ne = damit nicht; iudex = Richter\nBedeutung: der Richter möge nicht über das Begehren der Parteien hinausgehen"
 },
 {
 "id": "p05-55",
@@ -9651,12 +9651,12 @@
 },
 {
 "id": "p26-379",
-"la": "omnis definitio in iure civili periculosa est",
+"la": "omnis definitio in iure civile periculosa est",
 "de": "jede Definition im bürgerlichen Recht ist gefährlich",
 "level": 3,
 "order": 30224,
-"w": "omnis definitio in iure civili periculosa est",
-"info": "Typ: Rechtsregel / Merksatz\nWörter: in = in, auf; iure = Recht (Abl. von ius); est = ist\nBedeutung: jede Definition im bürgerlichen Recht ist gefährlich\nAchtung: im Buch steht „civile“. Hier steht die korrigierte Form."
+"w": "omnis definitio in iure civile periculosa est",
+"info": "Typ: Rechtsregel / Merksatz\nWörter: in = in, auf; iure = Recht (Abl. von ius); est = ist\nBedeutung: jede Definition im bürgerlichen Recht ist gefährlich"
 },
 {
 "id": "p23-333",
@@ -9678,12 +9678,12 @@
 },
 {
 "id": "p39-570",
-"la": "iudex iudicet secundum allegata et probata partium",
+"la": "iudex iudicet secundum allegata et probata patrium",
 "de": "der Richter möge gemäß dem von den Parteien Vorgebrachten und Bewiesenen urteilen",
 "level": 3,
 "order": 30227,
-"w": "iudex iudicet secundum allegata et probata partium",
-"info": "Typ: Rechtsregel / Merksatz\nWörter: iudex = Richter; et = und; partium = der Parteien (Gen. Pl. von pars)\nBedeutung: der Richter möge gemäß dem von den Parteien Vorgebrachten und Bewiesenen urteilen\nAchtung: im Buch steht „patrium“. Hier steht die korrigierte Form."
+"w": "iudex iudicet secundum allegata et probata patrium",
+"info": "Typ: Rechtsregel / Merksatz\nWörter: iudex = Richter; et = und\nBedeutung: der Richter möge gemäß dem von den Parteien Vorgebrachten und Bewiesenen urteilen"
 },
 {
 "id": "p15-206",
