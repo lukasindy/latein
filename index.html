@@ -557,14 +557,19 @@ function mkStep(t, id, d, lv) {
 }
 function mkSteps(cards, kind, lv) {
   const ids = cards.map(c => c.id);
-  if (kind === "exam") return cards.map(c => { const r = Math.random(); return r < .4 ? mkStep("mc", c.id, "ld", lv) : r < .7 ? mkStep("mc", c.id, "dl", lv) : mkStep("spell", c.id, null, lv); });
-  if (kind === "fix") return shuffle(cards.map(c => { const r = Math.random(); return r < .4 ? mkStep("mc", c.id, "ld") : r < .7 ? mkStep("mc", c.id, "dl") : mkStep("spell", c.id); }));
-  if (kind !== "lesson") return shuffle(cards.map(c => c.box <= 2 ? mkStep("mc", c.id, Math.random() < .5 ? "ld" : "dl") : (Math.random() < .5 ? mkStep("spell", c.id) : mkStep("mc", c.id, "dl"))));
-  const st = shuffle(ids).map(id => mkStep("mc", id, "ld"));
-  const sh = shuffle(ids), half = Math.ceil(ids.length / 2);
-  for (let k = 0; k < sh.length; k += 5) { const g = sh.slice(k, k + 5); if (g.length >= 3) st.push({ t: "match", ids: g }); }
-  shuffle(ids).slice(0, half).forEach(id => st.push(mkStep("spell", id)));
-  shuffle(ids).slice(0, half).forEach(id => st.push(mkStep("mc", id, "dl")));
+  // Pro 10 Wörter: 5× Deutsch → Latein, 2× Latein → Deutsch, 3× Schreibweise
+  const PLAN = ["dl", "dl", "dl", "dl", "dl", "ld", "ld", "sp", "sp", "sp"];
+  const typed = (list, l) => list.map((id, i) => { const t = PLAN[i % PLAN.length]; return t === "sp" ? mkStep("spell", id, null, l) : mkStep("mc", id, t, l); });
+  if (kind === "exam") return shuffle(typed(ids, lv));
+  if (kind !== "lesson") return shuffle(typed(shuffle(ids)));
+  const sh = shuffle(ids), tasks = typed(sh), st = [], groups = [];
+  for (let k = 0; k < sh.length; k += 5) { const g = sh.slice(k, k + 5); if (g.length >= 3) groups.push({ t: "match", ids: shuffle(g) }); }
+  const by = t => tasks.filter(s => t === "sp" ? s.t === "spell" : s.t === "mc" && s.d === t);
+  // Reihenfolge: Paare, Latein → Deutsch, Deutsch → Latein, Paare, Schreibweise
+  if (groups[0]) st.push(groups[0]);
+  st.push(...by("ld"), ...shuffle(by("dl")));
+  if (groups[1]) st.push(groups[1]);
+  st.push(...by("sp"));
   return st;
 }
 function begin(kind, cards, extra) {
