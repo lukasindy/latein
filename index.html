@@ -813,6 +813,8 @@ function tapMatch(side, id) {
     return render();
   }
   m.wrong = [m.sel, { side, id }]; m.sel = null; sess.mistakes++;
+  // Beide verwechselten Wörter in die Fehlerliste aufnehmen
+  [m.wrong[0].id, id].forEach(x => { const c = byId(x); if (c) { c.miss = Date.now(); c.missN = (c.missN || 0) + 1; } }); touch();
   render();
   setTimeout(() => { if (sess && sess.steps[sess.i] === st) { m.wrong = null; render(); } }, 450);
 }
