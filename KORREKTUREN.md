@@ -2,10 +2,6 @@
 
 In der App steht jeweils die korrigierte Form. Bitte mit deinem Skript oder Lehrer abgleichen.
 
-- **revisio, -onis f.** = Überprüfung, Revision: im Buch steht „streitverfangene Sache“
-- **prodigus, -i m.** = Verschwender: im Buch steht „prodigus, -us m.“
-- **prius, -oris n.** = das Vorhergehende: im Buch steht „prius, -us n.“
-- **pignus pignori dari potest** = ein Pfand kann zum Pfand gegeben werden: im Buch steht „pignore“
 - **perfidia, -ae f.** = Treulosigkeit, Hinterlistigkeit: im Buch steht „perfidie“
 - **orbis, -is m.** = Kreis, Umkreis, Erde, Welt: im Buch steht „f.“, orbis ist maskulin
 - **omnis definitio in iure civili periculosa est** = jede Definition im bürgerlichen Recht ist gefährlich: im Buch steht „civile“
