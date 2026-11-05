@@ -708,8 +708,6 @@ function render() {
   const nErr = S.cards.filter(c => c.miss).length, tb = $('nav.tabs [data-v="review"]');
   tb.querySelector(".tabn")?.remove();
   if (nErr) tb.insertAdjacentHTML("beforeend", `<span class="tabn" aria-label="${nErr} offene Fehler">${nErr > 99 ? "99+" : nErr}</span>`);
-  const ts = $('nav.tabs [data-v="add"]'); ts.querySelector(".tabn")?.remove();
-  if (needsBackup()) ts.insertAdjacentHTML("beforeend", `<span class="tabn" aria-label="Sicherung fällig">!</span>`);
   ({ learn: renderLearn, review: renderReview, exam: renderExams, list: renderList, add: renderAdd })[curView]();
   updateBadge();
 }
@@ -1007,12 +1005,7 @@ function renderAdd() {
     <input id="ab" autocomplete="off" enterkeyhint="done" placeholder="Deutsch, z. B. Freund" aria-label="Deutsch">
     <select id="alv" aria-label="Modul">${lvOpts(S.mod)}</select>
     <button class="btn primary" data-act="add-one">Hinzufügen</button></div></section>
-  <section class="panel"><h2>Liste einfügen</h2>
-    <p class="help">Eine Vokabel pro Zeile, Latein und Deutsch getrennt durch „=“, Semikolon oder Tab. Die Wörter kommen in das oben gewählte Modul.</p>
-    <div class="stack"><textarea id="imp" lang="la" aria-label="Vokabelliste" placeholder="amicus, amici m. = Freund&#10;laudare, laudo = loben"></textarea>
-    <button class="btn ghost" data-act="import">Importieren</button></div></section>
   <section class="panel"><div class="stack">
-    <button class="btn ghost" data-act="export">Wörter als Liste kopieren</button>
     <button class="link danger" data-act="reset">Lernfortschritt zurücksetzen</button></div></section>`;
   $("#aa").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); $("#ab").focus(); } });
   $("#ab").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); addOne(); } });
