@@ -723,9 +723,9 @@ function renderLearn() {
   let h = `<section class="goal plan">
     <div class="ptop"><span class="flame ${(S.days[today()] || 0) > 0 ? "" : "cold"}">${ICON.flame}<b>${sk}</b></span>
       <div><b class="disp">Ziel ${fmtDate(S.deadline)}</b><span>${p.over ? "Das Datum ist vorbei. Setz unter „Einstellungen“ ein neues Ziel." : p.remaining ? `Noch ${p.remaining} von ${p.total} Wörtern in ${p.daysLeft} ${p.daysLeft === 1 ? "Tag" : "Tagen"}` : "Alle Wörter gelernt!"}</span></div></div>
-    ${p.over || !p.target ? "" : `<div class="gl" style="margin-top:12px"><b style="font-size:17px">Heute</b><span>${Math.min(p.learnedToday, p.target)} / ${p.target} Wörter</span></div>
+    ${p.over || !p.target ? "" : `<div class="gl" style="margin-top:12px"><b style="font-size:17px">Heute</b><span>${p.learnedToday} / ${p.target} Wörter</span></div>
     <div class="bar"><i style="width:${Math.min(100, p.learnedToday / p.target * 100)}%"></i></div>
-    <p class="lvl">${p.todayLeft ? `Heute noch ${p.todayLeft} Wörter, etwa ${Math.ceil(p.todayLeft / SIZE)} ${Math.ceil(p.todayLeft / SIZE) === 1 ? "Lektion" : "Lektionen"}.` : "Für heute geschafft!"} Stufe ${lv.n}, ${S.xp} XP.</p>`}
+    <p class="lvl">${p.todayLeft ? `Heute noch ${p.todayLeft} Wörter, etwa ${Math.ceil(p.todayLeft / SIZE)} ${Math.ceil(p.todayLeft / SIZE) === 1 ? "Lektion" : "Lektionen"}.` : `${p.learnedToday > p.target ? `Tagesziel geschafft, ${p.learnedToday - p.target} Wörter extra!` : "Für heute geschafft!"}${p.tomorrow ? ` Ab morgen ${p.tomorrow} pro Tag.` : ""}`} Stufe ${lv.n}, ${S.xp} XP.</p>`}
   </section>`;
   h += `<div class="mods" role="group" aria-label="Modul">${[1, 2, 3].map(l => {
     const L = lessonsOf(l), d = L.filter((_, i) => doneOf(l, i)).length;
