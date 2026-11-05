@@ -1006,6 +1006,7 @@ function renderAdd() {
     <select id="alv" aria-label="Modul">${lvOpts(S.mod)}</select>
     <button class="btn primary" data-act="add-one">Hinzufügen</button></div></section>
   <section class="panel"><div class="stack">
+    <button class="btn ghost" data-act="restore-words">Originale Wörter wiederherstellen</button>
     <button class="link danger" data-act="reset">Lernfortschritt zurücksetzen</button></div></section>`;
   $("#aa").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); $("#ab").focus(); } });
   $("#ab").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); addOne(); } });
@@ -1026,6 +1027,21 @@ async function doExport() {
   const txt = [1, 2, 3].flatMap(l => sortedLv(l).map(c => `${c.la} = ${c.de}`)).join("\n");
   if (!txt) return toast("Keine Wörter zum Kopieren");
   try { await navigator.clipboard.writeText(txt); toast("Liste kopiert"); } catch (e) { toast("Kopieren nicht möglich"); }
+}
+async function restoreWords() {
+  if (!confirm("Alle Wörter auf den Originalstand zurücksetzen? Bearbeitete Wörter werden zurückgesetzt, gelöschte kommen zurück und selbst hinzugefügte werden entfernt. Dein Lernfortschritt bleibt erhalten.")) return;
+  try {
+    const r = await fetch("vokabeln.json", { cache: "no-cache" });
+    if (!r.ok) throw new Error("http");
+    const j = await r.json(), list = Array.isArray(j) ? j : j.words;
+    const old = new Map(S.cards.map(c => [c.id, c]));
+    S.cards = list.filter(w => w.la && w.de).map((w, i) => {
+      const o = old.get(String(w.id)) || {};
+      return { id: String(w.id), la: w.la, de: w.de, info: w.info || "", w: w.w || "", level: lvOf(w.level), order: typeof w.order === "number" ? w.order : i,
+        seen: !!o.seen, box: o.box || 0, due: o.due || 0, miss: o.miss || 0, missN: o.missN || 0 };
+    });
+    touch(); render(); toast(`${S.cards.length} originale Wörter wiederhergestellt`);
+  } catch (e) { toast("Wiederherstellen hat nicht geklappt, bitte mit Internet nochmal versuchen"); }
 }
 function resetProgress() {
   if (!confirm("Lektionen, Prüfungen, XP und Serie zurücksetzen? Die Wörter bleiben erhalten.")) return;
@@ -1071,6 +1087,7 @@ document.addEventListener("click", e => {
     case "import": doImport(); break;
     case "export": doExport(); break;
     case "reset": resetProgress(); break;
+    case "restore-words": restoreWords(); break;
     case "load-vocab": $("#fv").click(); break;
     case "export-prog": exportProgress(); break;
     case "import-prog": $("#fp").click(); break;
