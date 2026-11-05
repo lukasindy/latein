@@ -873,7 +873,7 @@ function stMatch(st) {
     const c = byId(id), gone = m.gone.includes(id);
     const sel = m.sel && m.sel.side === side && m.sel.id === id;
     const wr = m.wrong && m.wrong.some(w => w.side === side && w.id === id);
-    return `<button class="mt ${gone ? "gone" : ""} ${sel ? "sel" : ""} ${wr ? "wrong" : ""}" data-act="m" data-side="${side}" data-id="${id}" ${gone || sess.fb ? "disabled" : ""} ${side === "L" ? 'lang="la"' : ""}>${esc(side === "L" ? head(c) : c.de)}</button>`;
+    return `<button class="mt ${gone ? "gone" : ""} ${sel ? "sel" : ""} ${wr ? "wrong" : ""}" data-act="m" data-side="${side}" data-id="${id}" ${gone || sess.fb ? "disabled" : ""} ${side === "L" ? 'lang="la"' : ""}>${esc(side === "L" ? c.la : c.de)}</button>`;
   };
   return `<h2 class="ptitle">Finde die Paare</h2><div class="mgrid"><div class="mcol">${m.L.map(id => tile("L", id)).join("")}</div><div class="mcol">${m.R.map(id => tile("R", id)).join("")}</div></div>`;
 }
