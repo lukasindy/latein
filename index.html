@@ -239,7 +239,7 @@ dialog h2{margin-bottom:2px}
 
 .plan .ptop{display:flex;align-items:center;gap:14px}
 .plan .ptop b.disp{display:block;font-size:22px;line-height:1.15}
-.plan .ptop span{color:var(--muted);font-size:15px}
+.plan .ptop div span{color:var(--muted);font-size:15px}
 .flame{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:60px;height:64px;border-radius:16px;background:color-mix(in srgb,var(--flame) 14%,var(--surface));color:var(--flame)}
 .flame svg{width:28px;height:28px}
 .flame b{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-size:20px;line-height:1;color:var(--ink);font-variant-numeric:tabular-nums}
@@ -251,6 +251,7 @@ nav.tabs button{position:relative}
 .exam.fix{border:2px solid var(--bad-soft)}
 .exam.fix + .mist{margin-bottom:4px}
 .endstats{grid-template-columns:repeat(3,1fr)}
+.panel.warn{box-shadow:inset 0 0 0 2px var(--flame)}
 .node.cp{width:96px;height:72px;border-radius:22px;background:var(--flame);color:#fff;box-shadow:0 6px 0 color-mix(in srgb,var(--flame) 62%,#000)}
 .node.cp.done{background:var(--gold);box-shadow:0 6px 0 color-mix(in srgb,var(--gold) 65%,#000)}
 .node.cp.locked{background:var(--lock);color:var(--muted);box-shadow:0 6px 0 var(--lock-deep)}
@@ -275,7 +276,7 @@ nav.tabs button{position:relative}
   <button data-act="tab" data-v="list">
     <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="4" cy="6" r="1.3" fill="currentColor"/><circle cx="4" cy="12" r="1.3" fill="currentColor"/><circle cx="4" cy="18" r="1.3" fill="currentColor"/></svg>Wörter</button>
   <button data-act="tab" data-v="add">
-    <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>Neu</button>
+    <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>Einstellungen</button>
 </div></nav>
 
 <dialog id="ldlg"><h2 id="lt"></h2><p class="dsub" id="ls"></p><div class="chips" id="lw"></div>
@@ -707,6 +708,8 @@ function render() {
   const nErr = S.cards.filter(c => c.miss).length, tb = $('nav.tabs [data-v="review"]');
   tb.querySelector(".tabn")?.remove();
   if (nErr) tb.insertAdjacentHTML("beforeend", `<span class="tabn" aria-label="${nErr} offene Fehler">${nErr > 99 ? "99+" : nErr}</span>`);
+  const ts = $('nav.tabs [data-v="add"]'); ts.querySelector(".tabn")?.remove();
+  if (needsBackup()) ts.insertAdjacentHTML("beforeend", `<span class="tabn" aria-label="Sicherung fällig">!</span>`);
   ({ learn: renderLearn, review: renderReview, exam: renderExams, list: renderList, add: renderAdd })[curView]();
   updateBadge();
 }
@@ -715,18 +718,17 @@ function show(v) { if (v === "learn" && curView !== "learn") scrollCur = true; c
 function renderLearn() {
   const v = $("#view");
   if (!S.cards.length) {
-    v.innerHTML = `<div class="empty"><h2>Noch keine Wörter</h2><p>Lade deine Vokabeldatei unter „Neu“. Die Wörter werden nach Schwierigkeit in die Module Leicht, Mittel und Schwer einsortiert.</p><button class="btn primary" data-act="tab" data-v="add">Zu „Neu“</button></div>`;
+    v.innerHTML = `<div class="empty"><h2>Noch keine Wörter</h2><p>Lade deine Vokabeldatei unter „Einstellungen“. Die Wörter werden nach Schwierigkeit in die Module Leicht, Mittel und Schwer einsortiert.</p><button class="btn primary" data-act="tab" data-v="add">Zu den Einstellungen</button></div>`;
     return;
   }
   const lv = levelInfo(S.xp), p = plan(), sk = streak();
   let h = `<section class="goal plan">
     <div class="ptop"><span class="flame ${(S.days[today()] || 0) > 0 ? "" : "cold"}">${ICON.flame}<b>${sk}</b></span>
-      <div><b class="disp">Ziel ${fmtDate(S.deadline)}</b><span>${p.over ? "Das Datum ist vorbei. Setz unter „Neu“ ein neues Ziel." : p.remaining ? `Noch ${p.remaining} von ${p.total} Wörtern in ${p.daysLeft} ${p.daysLeft === 1 ? "Tag" : "Tagen"}` : "Alle Wörter gelernt!"}</span></div></div>
+      <div><b class="disp">Ziel ${fmtDate(S.deadline)}</b><span>${p.over ? "Das Datum ist vorbei. Setz unter „Einstellungen“ ein neues Ziel." : p.remaining ? `Noch ${p.remaining} von ${p.total} Wörtern in ${p.daysLeft} ${p.daysLeft === 1 ? "Tag" : "Tagen"}` : "Alle Wörter gelernt!"}</span></div></div>
     ${p.over || !p.target ? "" : `<div class="gl" style="margin-top:12px"><b style="font-size:17px">Heute</b><span>${Math.min(p.learnedToday, p.target)} / ${p.target} Wörter</span></div>
     <div class="bar"><i style="width:${Math.min(100, p.learnedToday / p.target * 100)}%"></i></div>
     <p class="lvl">${p.todayLeft ? `Heute noch ${p.todayLeft} Wörter, etwa ${Math.ceil(p.todayLeft / SIZE)} ${Math.ceil(p.todayLeft / SIZE) === 1 ? "Lektion" : "Lektionen"}.` : "Für heute geschafft!"} Stufe ${lv.n}, ${S.xp} XP.</p>`}
   </section>`;
-  if (needsBackup()) h += `<button class="review quiet" data-act="export-prog"><span><b>Sicherung exportieren</b><span>${backupText()}</span></span>${ICON.chev}</button>`;
   h += `<div class="mods" role="group" aria-label="Modul">${[1, 2, 3].map(l => {
     const L = lessonsOf(l), d = L.filter((_, i) => doneOf(l, i)).length;
     return `<button data-act="mod" data-l="${l}" aria-pressed="${S.mod === l}"><b>${LV[l].name}</b><span>${d} / ${L.length} Lektionen</span></button>`;
@@ -983,19 +985,10 @@ function delCard() {
   S.cards = S.cards.filter(x => x.id !== editId); touch(); $("#dlg").close(); fillList(); toast("Gelöscht");
 }
 
-/* ---------- Neu ---------- */
+/* ---------- Einstellungen ---------- */
 function renderAdd() {
   $("#view").innerHTML = `
-  <section class="panel"><h2>Neues Wort</h2><p class="help">Neue Wörter kommen ans Ende des gewählten Moduls.</p><div class="stack">
-    <input id="aa" lang="la" autocomplete="off" autocapitalize="off" enterkeyhint="next" placeholder="Latein, z. B. amicus, amici m." aria-label="Latein">
-    <input id="ab" autocomplete="off" enterkeyhint="done" placeholder="Deutsch, z. B. Freund" aria-label="Deutsch">
-    <select id="alv" aria-label="Modul">${lvOpts(S.mod)}</select>
-    <button class="btn primary" data-act="add-one">Hinzufügen</button></div></section>
-  <section class="panel"><h2>Liste einfügen</h2>
-    <p class="help">Eine Vokabel pro Zeile, Latein und Deutsch getrennt durch „=“, Semikolon oder Tab. Die Wörter kommen in das oben gewählte Modul.</p>
-    <div class="stack"><textarea id="imp" lang="la" aria-label="Vokabelliste" placeholder="amicus, amici m. = Freund&#10;laudare, laudo = loben"></textarea>
-    <button class="btn ghost" data-act="import">Importieren</button></div></section>
-  <section class="panel"><h2>Dateien</h2>
+  <section class="panel${needsBackup() ? " warn" : ""}"><h2>Sicherung &amp; Dateien</h2>
     <p class="help">Dein Fortschritt wird nach jeder Antwort und jeder Lektion automatisch auf diesem Gerät gespeichert. Exportiere ihn regelmäßig als Datei, damit er auch nach einem Gerätewechsel erhalten bleibt.</p>
     <div class="stack">
       <button class="btn primary" data-act="export-prog">Fortschritt exportieren</button>
@@ -1009,6 +1002,15 @@ function renderAdd() {
     ${"setAppBadge" in navigator && "Notification" in window ? `<div class="stack" style="margin-top:12px">${Notification.permission === "granted"
       ? `<p class="status" style="text-align:left;margin:0">Die Zahl am App-Symbol zeigt, wie viele Wörter als Nächstes dran sind. Sie aktualisiert sich, sobald du die App öffnest.</p>`
       : `<button class="btn ghost" data-act="badge">Zahl am App-Symbol anzeigen</button><p class="status" style="text-align:left;margin:0">Zeigt am App-Symbol, wie viele Wörter heute noch fehlen. iPadOS fragt dafür einmal nach der Erlaubnis für Mitteilungen.</p>`}</div>` : ""}</section>
+  <section class="panel"><h2>Neues Wort</h2><p class="help">Neue Wörter kommen ans Ende des gewählten Moduls.</p><div class="stack">
+    <input id="aa" lang="la" autocomplete="off" autocapitalize="off" enterkeyhint="next" placeholder="Latein, z. B. amicus, amici m." aria-label="Latein">
+    <input id="ab" autocomplete="off" enterkeyhint="done" placeholder="Deutsch, z. B. Freund" aria-label="Deutsch">
+    <select id="alv" aria-label="Modul">${lvOpts(S.mod)}</select>
+    <button class="btn primary" data-act="add-one">Hinzufügen</button></div></section>
+  <section class="panel"><h2>Liste einfügen</h2>
+    <p class="help">Eine Vokabel pro Zeile, Latein und Deutsch getrennt durch „=“, Semikolon oder Tab. Die Wörter kommen in das oben gewählte Modul.</p>
+    <div class="stack"><textarea id="imp" lang="la" aria-label="Vokabelliste" placeholder="amicus, amici m. = Freund&#10;laudare, laudo = loben"></textarea>
+    <button class="btn ghost" data-act="import">Importieren</button></div></section>
   <section class="panel"><div class="stack">
     <button class="btn ghost" data-act="export">Wörter als Liste kopieren</button>
     <button class="link danger" data-act="reset">Lernfortschritt zurücksetzen</button></div></section>`;
