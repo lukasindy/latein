@@ -818,20 +818,27 @@ function startEndless(lv, fresh) {
 }
 
 /* ---------- Prüfungen-Offiziell (Fragen und Antworten 1:1 aus der Übung) ---------- */
-const OFFN = { dl: "Deutsch → Latein", ld: "Latein → Deutsch" };
+const OFFN = { dl: "Deutsch → Latein", ld: "Latein → Deutsch", dl2: "Deutsch → Latein, feste Reihenfolge", ld2: "Latein → Deutsch, feste Reihenfolge" };
+const OFFX = k => k.slice(0, 2), OFFFIX = k => k.length > 2;
 let OFF = null, offBusy = null, offIdx = null;
 function loadOff() {
   if (OFF) return Promise.resolve(OFF);
   if (offBusy) return offBusy;
   offBusy = fetch("offiziell.json", { cache: "no-cache" }).then(r => { if (!r.ok) throw new Error("http"); return r.json(); }).then(j => {
     const dec = a => a.map(q => ({ t: j.s[q[0]], o: [j.s[q[1]], j.s[q[2]], j.s[q[3]], j.s[q[4]]], c: q[5] }));
-    OFF = { dl: dec(j.dl), ld: dec(j.ld) }; offBusy = null; return OFF;
+    OFF = { dl: dec(j.dl), ld: dec(j.ld), dl2: [], ld2: [] };
+    return fetch("offiziell2.json", { cache: "no-cache" }).then(r => r.ok ? r.json() : null).catch(() => null).then(x => {
+      const fx = (str, base) => { const out = []; String(str || "").split(";").forEach(r => { const m = /^(\d+)\.([0-3]{4})$/.exec(r); const b = m && OFF[base][+m[1]]; if (!b) return; const pm = m[2].split("").map(Number); out.push({ t: b.t, o: pm.map(i => b.o[i]), c: pm.indexOf(b.c) }); }); return out; };
+      if (x) { OFF.dl2 = fx(x.dl2, "dl"); OFF.ld2 = fx(x.ld2, "ld"); }
+      offBusy = null; return OFF;
+    });
   }).catch(e => { offBusy = null; throw e; });
   return offBusy;
 }
 const nk = s => strip(String(s)).toLowerCase().replace(/[^a-z0-9]+/g, "");
 function offCard(key, qi) {
   const q = OFF[key][qi]; if (!q) return null;
+  key = OFFX(key);
   if (!offIdx) offIdx = { dl: new Map(), ld: new Map() };
   const m = offIdx[key];
   if (m.size !== S.cards.length) { m.clear(); S.cards.forEach(c => m.set(key === "dl" ? nk(c.de) + "|" + nk(c.la) : nk(c.la) + "|" + nk(c.de), c)); }
@@ -841,8 +848,9 @@ async function startOfficial(key, fresh) {
   try { await loadOff(); } catch (e) { return toast("Die Fragen konnten nicht geladen werden. Bitte mit Internet nochmal versuchen."); }
   S.official = S.official || {};
   let e = S.official[key];
+  if (!OFF[key].length) return toast("Diese Prüfung ist noch nicht geladen. Bitte mit Internet nochmal versuchen.");
   if (fresh || !e || e.order.length !== OFF[key].length) {
-    e = S.official[key] = { order: shuffle(OFF[key].map((_, i) => i)), i: 0, correct: 0, mistakes: 0, wrong: [] };
+    e = S.official[key] = { order: OFFFIX(key) ? OFF[key].map((_, i) => i) : shuffle(OFF[key].map((_, i) => i)), i: 0, correct: 0, mistakes: 0, wrong: [] };
     touch();
   }
   const steps = e.order.map(q => ({ t: "off", q }));
@@ -861,7 +869,7 @@ function answerOff(k) {
   render(); window.scrollTo(0, 0);
 }
 function stOff(st) {
-  const q = OFF[sess.official][st.q], dl = sess.official === "dl";
+  const q = OFF[sess.official][st.q], dl = OFFX(sess.official) === "dl";
   return `<h2 class="ptitle">Wählen Sie eine Antwort:</h2>
     <div class="word" ${dl ? "" : 'lang="la"'}><span class="tag">${dl ? "Deutsch" : "Latein"}</span>${esc(q.t)}</div>
     <div class="ops">${q.o.map((o, k) => `<button class="op" data-act="opick" data-k="${k}" ${dl ? 'lang="la"' : ""}><b>${"abcd"[k]}.</b> ${esc(o)}</button>`).join("")}</div>`;
@@ -883,7 +891,8 @@ function renderExams() {
   });
   h += `<h3 class="lh" style="margin-top:24px">Prüfungen-Offiziell</h3><p class="help" style="margin:0 2px 4px">Die Fragen und Antwortmöglichkeiten der offiziellen Übung, unverändert und in zufälliger Reihenfolge. Du kannst jederzeit pausieren oder bis zum aktuellen Stand bewerten lassen.</p>`;
   if (!OFF) loadOff().then(() => { if (!sess && curView === "exam") render(); }).catch(() => {});
-  ["dl", "ld"].forEach(k => {
+  ["dl", "ld", "dl2", "ld2"].forEach(k => {
+    if (k === "dl2") h += `<p class="help" style="margin:14px 2px 4px">Dieselben Fragen in fester Reihenfolge (wie in der Übung mit gleichbleibender Fragenanordnung).</p>`;
     const e = (S.official || {})[k], b = (S.officialBest || {})[k], n = OFF ? OFF[k].length : 0;
     const done = e ? e.correct + e.mistakes : 0;
     h += `<div class="exam"><div><b>${OFFN[k]}</b><span>${e ? `Pausiert: ${done} von ${e.order.length} Fragen${done ? `, ${Math.round(e.correct / done * 100)} % richtig` : ""}` : n ? `${n} Fragen` : "Fragen werden geladen"}</span>${b ? `<span>Zuletzt ${b.last} % bei ${b.answered} Fragen</span>` : ""}</div>
