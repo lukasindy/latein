@@ -652,6 +652,7 @@ function answer(ok, pick) {
   render();
 }
 function advance() {
+  if (sess.official) return nextOff();
   const st = sess.steps[sess.i];
   if (st.t === "intro" || (sess.fb && sess.fb.ok)) sess.ok++;
   sess.fb = null; sess.i++;
@@ -859,12 +860,20 @@ async function startOfficial(key, fresh) {
   document.body.classList.add("insess"); render(); window.scrollTo(0, 0);
 }
 function answerOff(k) {
+  if (sess.fb) return;
   const st = sess.steps[sess.i], q = OFF[sess.official][st.q], ok = k === q.c;
   if (ok) sess.correct++; else { sess.mistakes++; sess.wrong.push(st.q); const c = offCard(sess.official, st.q); if (c) { c.miss = Date.now(); c.missN = (c.missN || 0) + 1; } }
-  sess.ok++; sess.i++;
+  sess.ok++;
+  const fix = OFFFIX(sess.official);
+  if (fix) sess.fb = { ok, pick: k }; else sess.i++;
   const e = (S.official || {})[sess.official];
-  if (e) { e.i = sess.i; e.correct = sess.correct; e.mistakes = sess.mistakes; e.wrong = sess.wrong; }
+  if (e) { e.i = fix ? sess.i + 1 : sess.i; e.correct = sess.correct; e.mistakes = sess.mistakes; e.wrong = sess.wrong; }
   touch();
+  if (!fix && sess.i >= sess.steps.length) finish();
+  render(); window.scrollTo(0, 0);
+}
+function nextOff() {
+  sess.fb = null; sess.i++;
   if (sess.i >= sess.steps.length) finish();
   render(); window.scrollTo(0, 0);
 }
@@ -872,7 +881,7 @@ function stOff(st) {
   const q = OFF[sess.official][st.q], dl = OFFX(sess.official) === "dl";
   return `<h2 class="ptitle">Wählen Sie eine Antwort:</h2>
     <div class="word" ${dl ? "" : 'lang="la"'}><span class="tag">${dl ? "Deutsch" : "Latein"}</span>${esc(q.t)}</div>
-    <div class="ops">${q.o.map((o, k) => `<button class="op" data-act="opick" data-k="${k}" ${dl ? 'lang="la"' : ""}><b>${"abcd"[k]}.</b> ${esc(o)}</button>`).join("")}</div>`;
+    <div class="ops">${q.o.map((o, k) => `<button class="op ${sess.fb ? (k === q.c ? "right" : k === sess.fb.pick ? "wrong" : "") : ""}" data-act="opick" data-k="${k}" ${sess.fb ? "disabled" : ""} ${dl ? 'lang="la"' : ""}><b>${"abcd"[k]}.</b> ${esc(o)}</button>`).join("")}</div>`;
 }
 
 function renderExams() {
@@ -965,6 +974,10 @@ function tapMatch(side, id) {
   setTimeout(() => { if (sess && sess.steps[sess.i] === st) { m.wrong = null; render(); } }, 450);
 }
 function fbBar(st) {
+  if (st.t === "off") {
+    const q = OFF[sess.official][st.q], ok = sess.fb.ok, dl = OFFX(sess.official) === "dl";
+    return `<div class="fb ${ok ? "" : "no"}" role="status"><div class="in"><div class="fbh"><h3>${ok ? "Richtig!" : "Nicht ganz"}</h3></div><p>${ok ? `<span ${dl ? "" : 'lang="la"'}>${esc(q.t)}</span> = <span ${dl ? 'lang="la"' : ""}>${esc(q.o[q.c])}</span>` : `Richtig ist: <mark ${dl ? 'lang="la"' : ""}>${esc(q.o[q.c])}</mark>`}</p><button class="btn ${ok ? "good" : "bad"} wide" id="fbgo" data-act="next">Weiter</button></div></div>`;
+  }
   const c = st.id ? byId(st.id) : null, ok = sess.fb.ok;
   const sol = c ? (st.t === "spell" ? st.right : st.d === "ld" ? c.de : c.la) : "";
   let title, line;
