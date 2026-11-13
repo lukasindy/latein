@@ -342,7 +342,7 @@ const ICON = {
 const stars = (n, s) => [1,2,3].map(i => `<span class="${i <= n ? "" : "off"}">${ICON.star(s)}</span>`).join("");
 
 /* ---------- Daten ---------- */
-function defaultState() { return { v: 4, t: 0, cards: [], done: {}, xp: 0, days: {}, learned: {}, deadline: DEADLINE, lastBackup: 0, mod: 1, exams: {}, cps: {}, endless: {}, endlessBest: {} }; }
+function defaultState() { return { v: 4, t: 0, cards: [], done: {}, xp: 0, days: {}, learned: {}, deadline: DEADLINE, lastBackup: 0, mod: 1, exams: {}, cps: {}, endless: {}, endlessBest: {}, official: {}, officialBest: {} }; }
 function migrate(s) {
   if (!s || !Array.isArray(s.cards)) return defaultState();
   const n = Object.assign(defaultState(), s);
@@ -671,8 +671,13 @@ function finish() {
     (lessonsOf(sess.lv)[sess.li] || []).forEach(c => { if (!c.seen) { c.seen = true; c.box = 1; c.due = startOfDay(Date.now()) + DAY; fresh++; } });
     S.learned[today()] = (S.learned[today()] || 0) + fresh;
   } else if (sess.kind === "exam") {
-    xp = sess.endless ? sess.correct : sess.correct * 2 + (acc >= 90 ? 10 : 0);
-    if (sess.endless) {
+    xp = (sess.endless || sess.official) ? sess.correct : sess.correct * 2 + (acc >= 90 ? 10 : 0);
+    if (sess.official) {
+      S.officialBest = S.officialBest || {};
+      const b = S.officialBest[sess.official] || { best: 0 };
+      S.officialBest[sess.official] = { best: Math.max(b.best, acc), last: acc, answered: tot, total: sess.base };
+      if (S.official) delete S.official[sess.official];
+    } else if (sess.endless) {
       S.endlessBest = S.endlessBest || {};
       const b = S.endlessBest[sess.lv] || { best: 0 };
       S.endlessBest[sess.lv] = { best: Math.max(b.best, acc), last: acc, answered: tot, total: sess.base };
@@ -812,6 +817,56 @@ function startEndless(lv, fresh) {
   document.body.classList.add("insess"); render(); window.scrollTo(0, 0);
 }
 
+/* ---------- Prüfungen-Offiziell (Fragen und Antworten 1:1 aus der Übung) ---------- */
+const OFFN = { dl: "Deutsch → Latein", ld: "Latein → Deutsch" };
+let OFF = null, offBusy = null, offIdx = null;
+function loadOff() {
+  if (OFF) return Promise.resolve(OFF);
+  if (offBusy) return offBusy;
+  offBusy = fetch("offiziell.json", { cache: "no-cache" }).then(r => { if (!r.ok) throw new Error("http"); return r.json(); }).then(j => {
+    const dec = a => a.map(q => ({ t: j.s[q[0]], o: [j.s[q[1]], j.s[q[2]], j.s[q[3]], j.s[q[4]]], c: q[5] }));
+    OFF = { dl: dec(j.dl), ld: dec(j.ld) }; offBusy = null; return OFF;
+  }).catch(e => { offBusy = null; throw e; });
+  return offBusy;
+}
+const nk = s => strip(String(s)).toLowerCase().replace(/[^a-z0-9]+/g, "");
+function offCard(key, qi) {
+  const q = OFF[key][qi]; if (!q) return null;
+  if (!offIdx) offIdx = { dl: new Map(), ld: new Map() };
+  const m = offIdx[key];
+  if (m.size !== S.cards.length) { m.clear(); S.cards.forEach(c => m.set(key === "dl" ? nk(c.de) + "|" + nk(c.la) : nk(c.la) + "|" + nk(c.de), c)); }
+  return m.get(nk(q.t) + "|" + nk(q.o[q.c])) || null;
+}
+async function startOfficial(key, fresh) {
+  try { await loadOff(); } catch (e) { return toast("Die Fragen konnten nicht geladen werden. Bitte mit Internet nochmal versuchen."); }
+  S.official = S.official || {};
+  let e = S.official[key];
+  if (fresh || !e || e.order.length !== OFF[key].length) {
+    e = S.official[key] = { order: shuffle(OFF[key].map((_, i) => i)), i: 0, correct: 0, mistakes: 0, wrong: [] };
+    touch();
+  }
+  const steps = e.order.map(q => ({ t: "off", q }));
+  sess = { from: "exam", kind: "exam", official: key, steps, i: e.i, ok: e.i, base: steps.length, correct: e.correct, mistakes: e.mistakes,
+    firstOk: 0, tried: new Set(), fb: null, res: null, wrong: [...e.wrong] };
+  document.body.classList.add("insess"); render(); window.scrollTo(0, 0);
+}
+function answerOff(k) {
+  const st = sess.steps[sess.i], q = OFF[sess.official][st.q], ok = k === q.c;
+  if (ok) sess.correct++; else { sess.mistakes++; sess.wrong.push(st.q); const c = offCard(sess.official, st.q); if (c) { c.miss = Date.now(); c.missN = (c.missN || 0) + 1; } }
+  sess.ok++; sess.i++;
+  const e = (S.official || {})[sess.official];
+  if (e) { e.i = sess.i; e.correct = sess.correct; e.mistakes = sess.mistakes; e.wrong = sess.wrong; }
+  touch();
+  if (sess.i >= sess.steps.length) finish();
+  render(); window.scrollTo(0, 0);
+}
+function stOff(st) {
+  const q = OFF[sess.official][st.q], dl = sess.official === "dl";
+  return `<h2 class="ptitle">Wählen Sie eine Antwort:</h2>
+    <div class="word" ${dl ? "" : 'lang="la"'}><span class="tag">${dl ? "Deutsch" : "Latein"}</span>${esc(q.t)}</div>
+    <div class="ops">${q.o.map((o, k) => `<button class="op" data-act="opick" data-k="${k}" ${dl ? 'lang="la"' : ""}><b>${"abcd"[k]}.</b> ${esc(o)}</button>`).join("")}</div>`;
+}
+
 function renderExams() {
   let h = `<h2 class="modh" style="margin-top:8px">Prüfungen</h2><p class="help" style="margin-top:4px">Zufällige Wörter aus dem ganzen Modul, ohne Hilfe und ohne Info-Button. Am Ende siehst du deine Note und deine Fehler.</p>`;
   [1, 2, 3].forEach(l => {
@@ -826,6 +881,14 @@ function renderExams() {
     h += `<div class="exam"><div><b>${LV[l].name}, endlos</b><span>${e ? `Pausiert: ${done} von ${e.ids.length} Wörtern${done ? `, ${Math.round(e.correct / done * 100)} % richtig` : ""}` : `${n} Wörter`}</span>${b ? `<span>Zuletzt ${b.last} % bei ${b.answered} Wörtern</span>` : ""}</div>
       <div class="stack" style="gap:4px;justify-items:center">${e ? `<button class="btn primary" data-act="endless" data-l="${l}">Weiter</button><button class="link" data-act="endless-new" data-l="${l}" style="min-height:32px;padding:2px 0">Neu starten</button>` : `<button class="btn primary" data-act="endless" data-l="${l}" ${n ? "" : "disabled"}>Starten</button>`}</div></div>`;
   });
+  h += `<h3 class="lh" style="margin-top:24px">Prüfungen-Offiziell</h3><p class="help" style="margin:0 2px 4px">Die Fragen und Antwortmöglichkeiten der offiziellen Übung, unverändert und in zufälliger Reihenfolge. Du kannst jederzeit pausieren oder bis zum aktuellen Stand bewerten lassen.</p>`;
+  if (!OFF) loadOff().then(() => { if (!sess && curView === "exam") render(); }).catch(() => {});
+  ["dl", "ld"].forEach(k => {
+    const e = (S.official || {})[k], b = (S.officialBest || {})[k], n = OFF ? OFF[k].length : 0;
+    const done = e ? e.correct + e.mistakes : 0;
+    h += `<div class="exam"><div><b>${OFFN[k]}</b><span>${e ? `Pausiert: ${done} von ${e.order.length} Fragen${done ? `, ${Math.round(e.correct / done * 100)} % richtig` : ""}` : n ? `${n} Fragen` : "Fragen werden geladen"}</span>${b ? `<span>Zuletzt ${b.last} % bei ${b.answered} Fragen</span>` : ""}</div>
+      <div class="stack" style="gap:4px;justify-items:center">${e ? `<button class="btn primary" data-act="official" data-k="${k}">Weiter</button><button class="link" data-act="official-new" data-k="${k}" style="min-height:32px;padding:2px 0">Neu starten</button>` : `<button class="btn primary" data-act="official" data-k="${k}">Starten</button>`}</div></div>`;
+  });
   $("#view").innerHTML = h;
 }
 
@@ -837,8 +900,8 @@ function renderSession() {
   if (!st) { finish(); return renderEnd(v); }
   if (st.t === "mc" && !st.opts) st.opts = mcOptions(byId(st.id), st.d, st.lv);
   const exam = sess.kind === "exam";
-  let h = `<div class="stop"><button class="x" data-act="quit" aria-label="${sess.endless ? "Pause" : "Beenden"}">${ICON.x}</button><div class="prog"><i style="width:${Math.min(100, sess.ok / sess.base * 100)}%"></i></div>${exam ? `<span class="muted">${sess.i + 1} / ${sess.base}</span>` : ""}</div>`;
-  h += ({ intro: stIntro, mc: stMC, match: stMatch, spell: stSpell })[st.t](st);
+  let h = `<div class="stop"><button class="x" data-act="quit" aria-label="${sess.endless || sess.official ? "Pause" : "Beenden"}">${ICON.x}</button><div class="prog"><i style="width:${Math.min(100, sess.ok / sess.base * 100)}%"></i></div>${exam ? `<span class="muted">${sess.i + 1} / ${sess.base}</span>` : ""}</div>`;
+  h += ({ intro: stIntro, mc: stMC, match: stMatch, spell: stSpell, off: stOff })[st.t](st);
   if (sess.fb) h += fbBar(st);
   v.innerHTML = h;
   if (sess.fb) $("#fbgo")?.focus({ preventScroll: true });
@@ -903,15 +966,17 @@ function fbBar(st) {
 function renderEnd(v) {
   const r = sess.res, k = sess.kind;
   if (k === "exam") {
-    const wrong = [...new Set(sess.wrong)].map(byId).filter(Boolean);
+    const off = sess.official, part = sess.endless || off;
+    const wrong = off ? [] : [...new Set(sess.wrong)].map(byId).filter(Boolean);
+    const offWrong = off ? [...new Set(sess.wrong)].map(i => OFF[off][i]).filter(Boolean) : [];
     v.innerHTML = `<div class="end">
-      <h2>${sess.endless ? `Endlos-Prüfung ${LV[sess.lv].name}` : sess.cp ? `${sess.cp.name}<br><small class="muted" style="font-size:17px">${LV[sess.lv].name}, Abschnitt ${sess.cp.u + 1}</small>` : `Prüfung ${LV[sess.lv].name}`}</h2>
+      <h2>${off ? `Prüfung offiziell<br><small class="muted" style="font-size:17px">${OFFN[off]}</small>` : sess.endless ? `Endlos-Prüfung ${LV[sess.lv].name}` : sess.cp ? `${sess.cp.name}<br><small class="muted" style="font-size:17px">${LV[sess.lv].name}, Abschnitt ${sess.cp.u + 1}</small>` : `Prüfung ${LV[sess.lv].name}`}</h2>
       <div class="pct" style="color:${r.acc >= 67 ? "var(--good)" : r.acc >= 50 ? "var(--gold)" : "var(--bad)"}">${r.acc} %</div>
-      <span class="grade">Note ${r.grade}, ${sess.correct} von ${sess.endless ? sess.correct + sess.mistakes : sess.base} richtig, ${sess.mistakes} Fehler</span>
-      ${sess.endless ? `<p class="muted" style="margin:4px 0 0">${sess.correct + sess.mistakes} von ${sess.base} Wörtern geprüft</p>` : ""}
+      <span class="grade">Note ${r.grade}, ${sess.correct} von ${part ? sess.correct + sess.mistakes : sess.base} richtig, ${sess.mistakes} Fehler</span>
+      ${part ? `<p class="muted" style="margin:4px 0 0">${sess.correct + sess.mistakes} von ${sess.base} ${off ? "Fragen" : "Wörtern"} geprüft</p>` : ""}
       <div class="xpbig" style="font-size:44px;margin:10px 0 18px">+<span id="xpc">${r.xp}</span> XP</div>
       ${r.goal ? `<span class="badge">Tagesziel erreicht</span>` : ""}${r.lvl ? `<span class="badge">Stufe ${r.lvl} erreicht</span>` : ""}
-      ${wrong.length ? `<h3 class="lh" style="margin-top:14px">Deine Fehler</h3><ul class="mist">${wrong.map(c => `<li><div><b lang="la">${esc(c.la)}</b><span>${esc(c.de)}</span></div>${ib(c.id)}</li>`).join("")}</ul>` : `<p class="muted">Keine Fehler. Stark!</p>`}
+      ${offWrong.length ? `<h3 class="lh" style="margin-top:14px">Deine Fehler</h3><ul class="mist">${offWrong.map(q => `<li><div><b ${off === "ld" ? 'lang="la"' : ""}>${esc(q.t)}</b><span ${off === "dl" ? 'lang="la"' : ""}>${esc(q.o[q.c])}</span></div></li>`).join("")}</ul>` : wrong.length ? `<h3 class="lh" style="margin-top:14px">Deine Fehler</h3><ul class="mist">${wrong.map(c => `<li><div><b lang="la">${esc(c.la)}</b><span>${esc(c.de)}</span></div>${ib(c.id)}</li>`).join("")}</ul>` : `<p class="muted">Keine Fehler. Stark!</p>`}
       <button class="btn primary wide" data-act="quit">Fertig</button></div>`;
   } else {
     const lesson = k === "lesson";
@@ -1045,7 +1110,7 @@ async function restoreWords() {
 }
 function resetProgress() {
   if (!confirm("Lektionen, Prüfungen, XP und Serie zurücksetzen? Die Wörter bleiben erhalten.")) return;
-  S.done = {}; S.xp = 0; S.days = {}; S.exams = {}; S.learned = {}; S.cps = {}; S.endless = {}; S.endlessBest = {}; S.cards.forEach(c => { c.seen = false; c.box = 0; c.due = 0; c.miss = 0; c.missN = 0; });
+  S.done = {}; S.xp = 0; S.days = {}; S.exams = {}; S.learned = {}; S.cps = {}; S.endless = {}; S.endlessBest = {}; S.official = {}; S.officialBest = {}; S.cards.forEach(c => { c.seen = false; c.box = 0; c.due = 0; c.miss = 0; c.missN = 0; });
   touch(); render(); toast("Fortschritt zurückgesetzt");
 }
 
@@ -1064,15 +1129,18 @@ document.addEventListener("click", e => {
     case "deadline": break;
     case "exam": startExam(+b.dataset.l); break;
     case "quit":
-      if (sess && sess.endless && !sess.res) {
+      if (sess && (sess.endless || sess.official) && !sess.res) {
         const n = sess.correct + sess.mistakes;
-        $("#es").textContent = `${n} von ${sess.base} Wörtern beantwortet${n ? `, ${Math.round(sess.correct / n * 100)} % richtig` : ""}. Dein Stand ist gespeichert.`;
+        $("#es").textContent = `${n} von ${sess.base} ${sess.official ? "Fragen" : "Wörtern"} beantwortet${n ? `, ${Math.round(sess.correct / n * 100)} % richtig` : ""}. Dein Stand ist gespeichert.`;
         $("#edlg").showModal();
       } else quit();
       break;
     case "e-pause": $("#edlg").close(); sess = null; document.body.classList.remove("insess"); curView = "exam"; render(); window.scrollTo(0, 0); toast("Pausiert, du kannst später weitermachen"); break;
     case "e-eval": $("#edlg").close(); if (!(sess.correct + sess.mistakes)) { toast("Beantworte zuerst mindestens ein Wort"); break; } finish(); render(); window.scrollTo(0, 0); break;
     case "endless": startEndless(+b.dataset.l, false); break;
+    case "official": startOfficial(b.dataset.k, false); break;
+    case "official-new": if (confirm("Den pausierten Stand verwerfen und neu starten?")) startOfficial(b.dataset.k, true); break;
+    case "opick": answerOff(+b.dataset.k); break;
     case "endless-new": if (confirm("Den pausierten Stand verwerfen und neu starten?")) startEndless(+b.dataset.l, true); break;
     case "next": advance(); break;
     case "pick": { if (sess.fb) break; const st = sess.steps[sess.i]; answer(id === st.id, id); break; }
