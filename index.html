@@ -1134,11 +1134,12 @@ function renderGrSheet(v, l) {
   l.T.forEach(t => {
     h += '<div class="grt"><b>' + esc(t.n) + '</b><div class="grs"><table><thead><tr><th></th>' + t.c.map(c => '<th>' + esc(c) + '</th>').join("") + '</tr></thead><tbody>' + t.r.map(r => '<tr>' + r.map((x, i) => i ? '<td lang="la">' + esc(x) + '</td>' : '<td>' + esc(x) + '</td>').join("") + '</tr>').join("") + '</tbody></table></div></div>';
   });
-  h += '<div class="stack" style="margin-top:22px"><button class="btn primary wide" data-act="g-start" data-id="' + l.id + '">Üben (12 Fragen)</button></div>';
+  h += '<div class="stack" style="margin-top:22px"><button class="btn primary wide" data-act="g-start" data-id="' + l.id + '">Üben (' + grQs([l], 12).length + ' Fragen)</button></div>';
   v.innerHTML = h;
 }
 function startGr(id) {
   const isM = /^m[123]$/.test(id), ls = id === "mix" ? GR : isM ? GR.filter(l => GM[id[1]].includes(l.id)) : GR.filter(l => l.id === id);
+  if (isM && !ls.every(l => grStars(l.id) > 0)) return toast("Schließ zuerst alle Lektionen dieses Moduls ab");
   const qs = grQs(ls, id === "mix" ? 20 : isM ? 15 : 12);
   if (!qs.length) return;
   gv = { m: "quiz", id, qs, i: 0, ok: 0, bad: 0, fb: null, wrong: [] };
@@ -1338,7 +1339,7 @@ document.addEventListener("click", e => {
     case "blk-go": sess.blk = null; sess.bc = 0; sess.bm = 0; sess.bw = []; render(); window.scrollTo(0, 0); break;
     case "blk-save": sess = null; document.body.classList.remove("insess"); curView = "exam"; render(); window.scrollTo(0, 0); toast("Gespeichert, du machst später mit dem nächsten Block weiter"); break;
     case "endless-new": if (confirm("Den pausierten Stand verwerfen und neu starten?")) startEndless(+b.dataset.l, true); break;
-    case "g-open": gv = { m: "sheet", id }; render(); window.scrollTo(0, 0); break;
+    case "g-open": { const mm = Object.keys(GM).find(k => GM[k].includes(id)), ix = mm ? GM[mm].indexOf(id) : 0; if (ix > 0 && !grStars(GM[mm][ix - 1])) { toast("Schließ zuerst die Lektion davor ab"); break; } gv = { m: "sheet", id }; render(); window.scrollTo(0, 0); break; }
     case "g-back": gv = { m: "list" }; render(); window.scrollTo(0, 0); break;
     case "g-start": startGr(id); break;
     case "g-mod": S.gmod = +b.dataset.l; touch(); render(); window.scrollTo(0, 0); break;
