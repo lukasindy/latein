@@ -2,7 +2,7 @@
 <html lang="de">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Latein">
 <title>Latein Vokabeln</title>
@@ -275,6 +275,10 @@ nav.tabs button{position:relative}
 .grs tr:last-child td{border-bottom:0}
 nav.tabs button{font-size:10px;min-width:0;padding-left:0;padding-right:0}
 .grb{background:none;border:0;color:var(--accent);font:inherit;font-weight:700;padding:6px 0;margin-top:4px}
+.grx{background:var(--surface);border-radius:12px;padding:10px 14px;margin-top:8px}
+.grx i{display:block;font-weight:700}
+.grx span{display:block;color:var(--muted);font-size:15px;margin-top:2px}
+*{touch-action:manipulation}
 </style>
 </head>
 <body>
@@ -815,11 +819,6 @@ function renderReview() {
   fixPart += `<div class="exam fix"><div><b>Fehler ausbessern</b><span>${errs.length ? `${errs.length} ${errs.length === 1 ? "Wort" : "Wörter"}, bei denen du falsch gewählt hast. Richtig beantwortet verschwinden sie aus der Liste.` : "Keine offenen Fehler. Sehr gut!"}</span></div><button class="btn primary" data-act="review" data-m="fix" ${errs.length ? "" : "disabled"}>Starten</button></div>`;
   if (errs.length) fixPart += `<ul class="mist">${errs.slice(0, 30).map(c => `<li><div><b lang="la">${esc(c.la)}</b><span>${esc(c.de)}${c.missN > 1 ? `, ${c.missN}× falsch` : ""}</span></div>${ib(c.id)}</li>`).join("")}</ul>${errs.length > 30 ? `<p class="status">und ${errs.length - 30} weitere</p>` : ""}`;
   h += fixPart + dueCard;
-  h += `<h3 class="lh" style="margin-top:22px">Frei üben, 10 zufällige gelernte Wörter</h3>`;
-  [[0, "Alle Module"], [1, "Leicht"], [2, "Mittel"], [3, "Schwer"]].forEach(([l, n]) => {
-    const k = cnt(l);
-    h += `<div class="exam"><div><b>${n}</b><span>${k} gelernte Wörter</span></div><button class="btn ghost" data-act="review" data-m="free" data-l="${l}" ${k ? "" : "disabled"}>Üben</button></div>`;
-  });
   $("#view").innerHTML = h;
 }
 
@@ -1065,12 +1064,12 @@ function renderEnd(v) {
 }
 
 /* ---------- Grammatik ---------- */
-let GR = null, grBusy = null, gv = { m: "list" };
+let GR = null, GI = {}, GM = {}, grBusy = null, gv = { m: "list" };
 function loadGr() {
   if (GR) return Promise.resolve(GR);
   if (grBusy) return grBusy;
-  return grBusy = Promise.all(["grammatik1.json", "grammatik2.json", "grammatik3.json"].map(f => fetch(f + "?z=" + Date.now(), { cache: "no-cache" }).then(r => { if (!r.ok) throw new Error("gr"); return r.json(); })))
-    .then(a => { GR = [].concat(...a.map(x => x.L)); grBusy = null; return GR; })
+  return grBusy = Promise.all(["grammatik0.json", "grammatik1.json", "grammatik2.json", "grammatik3.json"].map(f => fetch(f + "?z=" + Date.now(), { cache: "no-cache" }).then(r => { if (!r.ok) throw new Error("gr"); return r.json(); })))
+    .then(a => { GI = a[0].I; GM = a[0].M; GR = [].concat(...a.slice(1).map(x => x.L)); grBusy = null; return GR; })
     .catch(e => { grBusy = null; throw e; });
 }
 const grStars = id => (S.gram && S.gram[id] && S.gram[id].stars) || 0;
@@ -1107,14 +1106,27 @@ function renderGram() {
   if (gv.m === "quiz") return renderGrQuiz(v);
   if (gv.m === "end") return renderGrEnd(v);
   if (gv.m === "sheet") return renderGrSheet(v, GR.find(l => l.id === gv.id));
-  const done = GR.filter(l => grStars(l.id) > 0).length;
-  let h = '<h2 class="modh" style="margin-top:8px">Grammatik</h2><p class="help" style="margin:0 2px 8px">Alle Themen aus der Vorlesung zur Latein-Grammatik. Zuerst das Merkblatt lesen, dann mit Fragen üben. ' + done + ' von ' + GR.length + ' Lektionen geübt.</p>';
-  h += '<button class="grc" data-act="g-mix"><span class="n">★</span><div><b>Grammatik-Mix</b><span class="s">20 Fragen quer durch alle Themen</span></div><span class="st">' + stars(grStars("mix"), 18) + '</span></button>';
-  GR.forEach((l, i) => { h += '<button class="grc" data-act="g-open" data-id="' + l.id + '"><span class="n">' + (i + 1) + '</span><div><b>' + esc(l.t) + '</b><span class="s">' + esc(l.s) + '</span></div><span class="st">' + stars(grStars(l.id), 18) + '</span></button>'; });
+  const m = S.gmod || 1, L = (GM[m] || []).map(id => GR.find(l => l.id === id)).filter(Boolean);
+  let h = '<h2 class="modh" style="margin-top:8px">Grammatik</h2><p class="help" style="margin:0 2px 4px">Alle Themen aus der Vorlesung, nach Schwierigkeit sortiert. Tippe auf eine Lektion: zuerst wird das Thema erklärt, dann übst du es.</p>';
+  h += '<div class="mods" role="group" aria-label="Modul">' + [1, 2, 3].map(k => { const a = (GM[k] || []).filter(id => grStars(id) > 0).length; return '<button data-act="g-mod" data-l="' + k + '" aria-pressed="' + (m === k) + '"><b>' + LV[k].name + '</b><span>' + a + ' / ' + (GM[k] || []).length + ' Lektionen</span></button>'; }).join("") + '</div>';
+  const cur = L.findIndex(l => !grStars(l.id));
+  h += '<section class="unit"><h3>' + LV[m].name + '</h3><p>' + L.length + ' Lektionen, zum Schluss der Modul-Test</p><div class="path" style="padding-top:46px">';
+  L.forEach((l, i) => {
+    const d = grStars(l.id), st = d ? "done" : i === cur ? "cur" : "";
+    h += '<div class="nw" style="--z:' + ZZ[i % 8] + '">' + (st === "cur" ? '<span class="bubble">' + (i === 0 ? "Start" : "Weiter") + '</span>' : "") + '<button class="node ' + st + '" data-act="g-open" data-id="' + l.id + '" aria-label="' + esc(l.t) + '">' + (d ? ICON.check : ICON.play) + '</button>' + (d ? '<div class="nstars">' + stars(d, 16) + '</div>' : "") + '<span class="cpl" style="max-width:190px">' + esc(l.t) + '</span></div>';
+  });
+  const tk = "m" + m, tr = S.gram && S.gram[tk];
+  h += '<div class="nw cpw"><button class="node cp ' + (tr ? "done" : "") + '" data-act="g-start" data-id="' + tk + '" aria-label="Modul-Test">' + ICON.trophy + '</button><span class="cpl">Modul-Test' + (tr ? '<br>Bestwert ' + tr.best + ' %' : "") + '</span></div></div></section>';
+  h += '<div class="stack" style="margin-top:26px"><button class="btn ghost wide" data-act="g-mix">Grammatik-Mix, 20 Fragen aus allen Themen</button></div>';
   v.innerHTML = h;
 }
 function renderGrSheet(v, l) {
-  let h = '<button class="grb" data-act="g-back">‹ Alle Lektionen</button><h2 class="modh" style="margin-top:4px">' + esc(l.t) + '</h2><p class="help" style="margin:0">' + esc(l.s) + '</p><ul class="grr">' + l.r.map(x => '<li>' + esc(x) + '</li>').join("") + '</ul>';
+  const I = GI[l.id] || {}, mm = Object.keys(GM).find(k => GM[k].includes(l.id)), no = mm ? GM[mm].indexOf(l.id) + 1 : 0;
+  let h = '<button class="grb" data-act="g-back">‹ Alle Lektionen</button><p class="help" style="margin:4px 0 0">' + (mm ? LV[mm].name + ', Lektion ' + no : "") + '</p><h2 class="modh" style="margin-top:2px">' + esc(l.t) + '</h2><p class="help" style="margin:0">' + esc(l.s) + '</p>';
+  if (I.w) h += '<h3 class="lh" style="margin-top:18px">Worum geht es?</h3><p style="margin:6px 0 0;line-height:1.5">' + esc(I.w) + '</p>';
+  if (I.t) h += '<h3 class="lh" style="margin-top:18px">So gehst du vor</h3><ul class="grr">' + I.t.map(x => '<li>' + esc(x) + '</li>').join("") + '</ul>';
+  if (I.b) h += '<h3 class="lh" style="margin-top:18px">Beispiele</h3>' + I.b.map(x => '<div class="grx"><i lang="la">' + esc(x[0]) + '</i><span>' + esc(x[1]) + '</span></div>').join("");
+  h += '<h3 class="lh" style="margin-top:18px">Regeln und Formen</h3><ul class="grr">' + l.r.map(x => '<li>' + esc(x) + '</li>').join("") + '</ul>';
   l.T.forEach(t => {
     h += '<div class="grt"><b>' + esc(t.n) + '</b><div class="grs"><table><thead><tr><th></th>' + t.c.map(c => '<th>' + esc(c) + '</th>').join("") + '</tr></thead><tbody>' + t.r.map(r => '<tr>' + r.map((x, i) => i ? '<td lang="la">' + esc(x) + '</td>' : '<td>' + esc(x) + '</td>').join("") + '</tr>').join("") + '</tbody></table></div></div>';
   });
@@ -1122,8 +1134,8 @@ function renderGrSheet(v, l) {
   v.innerHTML = h;
 }
 function startGr(id) {
-  const ls = id === "mix" ? GR : GR.filter(l => l.id === id);
-  const qs = grQs(ls, id === "mix" ? 20 : 12);
+  const isM = /^m[123]$/.test(id), ls = id === "mix" ? GR : isM ? GR.filter(l => GM[id[1]].includes(l.id)) : GR.filter(l => l.id === id);
+  const qs = grQs(ls, id === "mix" ? 20 : isM ? 15 : 12);
   if (!qs.length) return;
   gv = { m: "quiz", id, qs, i: 0, ok: 0, bad: 0, fb: null, wrong: [] };
   render(); window.scrollTo(0, 0);
@@ -1161,7 +1173,7 @@ function grFinish() {
 }
 function renderGrEnd(v) {
   const r = gv.res, l = gv.id === "mix" ? null : GR.find(x => x.id === gv.id);
-  v.innerHTML = '<div class="end"><h2>' + (l ? esc(l.t) : "Grammatik-Mix") + '</h2><div class="bigstars">' + stars(r.stars, 44) + '</div><div class="pct" style="color:' + (r.acc >= 67 ? "var(--good)" : r.acc >= 50 ? "var(--gold)" : "var(--bad)") + '">' + r.acc + ' %</div><span class="grade">' + gv.ok + ' von ' + gv.qs.length + ' richtig, ' + gv.bad + ' Fehler</span><div class="xpbig" style="font-size:44px;margin:10px 0 18px">+' + r.xp + ' XP</div>' + (r.lvl ? '<span class="badge">Stufe ' + r.lvl + ' erreicht</span>' : "")
+  v.innerHTML = '<div class="end"><h2>' + (l ? esc(l.t) : /^m\d$/.test(gv.id) ? "Modul-Test " + LV[gv.id[1]].name : "Grammatik-Mix") + '</h2><div class="bigstars">' + stars(r.stars, 44) + '</div><div class="pct" style="color:' + (r.acc >= 67 ? "var(--good)" : r.acc >= 50 ? "var(--gold)" : "var(--bad)") + '">' + r.acc + ' %</div><span class="grade">' + gv.ok + ' von ' + gv.qs.length + ' richtig, ' + gv.bad + ' Fehler</span><div class="xpbig" style="font-size:44px;margin:10px 0 18px">+' + r.xp + ' XP</div>' + (r.lvl ? '<span class="badge">Stufe ' + r.lvl + ' erreicht</span>' : "")
     + (gv.wrong.length ? '<h3 class="lh" style="margin-top:14px">Das solltest du dir noch einmal ansehen</h3><ul class="mist">' + gv.wrong.map(q => '<li><div><b' + (q.lat ? ' lang="la"' : "") + '>' + esc(q.h) + (q.s ? ", " + esc(q.s) : "") + '</b><span' + (q.lat ? ' lang="la"' : "") + '>' + esc(q.a) + '</span></div></li>').join("") + '</ul>' : '<p class="muted">Keine Fehler. Stark!</p>')
     + '<div class="stack" style="margin-top:18px"><button class="btn primary wide" data-act="g-start" data-id="' + gv.id + '">Nochmal üben</button>' + (l ? '<button class="btn ghost wide" data-act="g-open" data-id="' + l.id + '">Zum Merkblatt</button>' : "") + '<button class="btn ghost wide" data-act="g-back">Alle Lektionen</button></div><p class="muted">Fortschritt gespeichert</p></div>';
 }
@@ -1237,12 +1249,22 @@ function renderAdd() {
     <input id="ab" autocomplete="off" enterkeyhint="done" placeholder="Deutsch, z. B. Freund" aria-label="Deutsch">
     <select id="alv" aria-label="Modul">${lvOpts(S.mod)}</select>
     <button class="btn primary" data-act="add-one">Hinzufügen</button></div></section>
+  <section class="panel"><h2>App-Version</h2><p class="help">Version ${APP_VER}. Die App sucht beim Öffnen selbst nach Neuerungen. Falls etwas fehlt, kannst du hier das Update erzwingen. Dein Fortschritt bleibt dabei erhalten.</p><div class="stack"><button class="btn primary" data-act="app-update">Jetzt aktualisieren</button></div></section>
   <section class="panel"><div class="stack">
     <button class="btn ghost" data-act="restore-words">Originale Wörter wiederherstellen</button>
     <button class="link danger" data-act="reset">Lernfortschritt zurücksetzen</button></div></section>`;
   $("#aa").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); $("#ab").focus(); } });
   $("#ab").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); addOne(); } });
   $("#dl").addEventListener("change", e => { if (e.target.value) { S.deadline = e.target.value; touch(); updateBadge(); toast(`Lernziel: ${fmtDate(S.deadline)}`); } });
+}
+const APP_VER = "v9";
+async function appUpdate() {
+  toast("Suche nach Updates …");
+  try {
+    if ("serviceWorker" in navigator) { const rs = await navigator.serviceWorker.getRegistrations(); await Promise.all(rs.map(r => r.unregister())); }
+    if (window.caches) { const ks = await caches.keys(); await Promise.all(ks.map(k => caches.delete(k))); }
+  } catch (e) {}
+  location.replace(location.pathname + "?u=" + Date.now());
 }
 function addOne() {
   const la = $("#aa").value.trim(), de = $("#ab").value.trim(), level = +$("#alv").value;
@@ -1315,6 +1337,7 @@ document.addEventListener("click", e => {
     case "g-open": gv = { m: "sheet", id }; render(); window.scrollTo(0, 0); break;
     case "g-back": gv = { m: "list" }; render(); window.scrollTo(0, 0); break;
     case "g-start": startGr(id); break;
+    case "g-mod": S.gmod = +b.dataset.l; touch(); render(); window.scrollTo(0, 0); break;
     case "g-mix": startGr("mix"); break;
     case "g-pick": grPick(+b.dataset.k); break;
     case "g-next": grNext(); break;
@@ -1332,6 +1355,7 @@ document.addEventListener("click", e => {
     case "import": doImport(); break;
     case "export": doExport(); break;
     case "reset": resetProgress(); break;
+    case "app-update": appUpdate(); break;
     case "restore-words": restoreWords(); break;
     case "load-vocab": $("#fv").click(); break;
     case "export-prog": exportProgress(); break;
@@ -1344,7 +1368,7 @@ $("#fp").addEventListener("change", e => importProgress(e.target));
 if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
 render();
 loadServerVocab();
-if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").catch(() => {});
+if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js").then(r => { r.update().catch(() => {}); document.addEventListener("visibilitychange", () => { if (!document.hidden) r.update().catch(() => {}); }); }).catch(() => {});
 </script>
 </body>
 </html>
