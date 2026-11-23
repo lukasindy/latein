@@ -769,7 +769,7 @@ function renderLearn() {
     const cps = cpsOf(m, u);
     ls.forEach((ws, k) => {
       const i = u * UNIT + k, st = doneOf(m, i) ? "done" : isOpen(m, i) ? "cur" : "locked";
-      h += `<div class="nw" style="--z:${ZZ[i % 8]}">${st === "cur" ? `<span class="bubble">${i === 0 ? "Start" : "Weiter"}</span>` : ""}
+      h += `<div class="nw" style="--z:${ZZ[i % 8]}${st === "cur" ? ";margin-top:38px" : ""}">${st === "cur" ? `<span class="bubble">${i === 0 ? "Start" : "Weiter"}</span>` : ""}
         <button class="node ${st}" data-act="lesson" data-i="${i}" aria-label="Lektion ${i + 1}${st === "locked" ? ", gesperrt" : st === "done" ? ", abgeschlossen" : ""}">${st === "done" ? ICON.check : st === "cur" ? ICON.play : ICON.lock}</button>
         ${st === "done" ? `<div class="nstars">${stars(doneOf(m, i), 16)}</div>` : ""}</div>`;
       cps.filter(c => c.after === i).forEach(c => {
@@ -1106,17 +1106,21 @@ function renderGram() {
   if (gv.m === "quiz") return renderGrQuiz(v);
   if (gv.m === "end") return renderGrEnd(v);
   if (gv.m === "sheet") return renderGrSheet(v, GR.find(l => l.id === gv.id));
-  const m = S.gmod || 1, L = (GM[m] || []).map(id => GR.find(l => l.id === id)).filter(Boolean);
-  let h = '<h2 class="modh" style="margin-top:8px">Grammatik</h2><p class="help" style="margin:0 2px 4px">Alle Themen aus der Vorlesung, nach Schwierigkeit sortiert. Tippe auf eine Lektion: zuerst wird das Thema erklärt, dann übst du es.</p>';
+  const m = S.gmod || 1, L = (GM[m] || []).map(id => GR.find(l => l.id === id)).filter(Boolean), p = plan(), left = GR.filter(l => !grStars(l.id)).length;
+  let h = `<section class="goal plan"><div class="ptop"><span class="flame ${(S.days[today()] || 0) > 0 ? "" : "cold"}">${ICON.flame}<b>${streak()}</b></span><div><b class="disp">Ziel ${fmtDate(S.deadline)}</b><span>${p.over ? "Das Datum ist vorbei. Setz unter „Einstellungen“ ein neues Ziel." : left ? `Noch ${left} von ${GR.length} Lektionen in ${p.daysLeft} ${p.daysLeft === 1 ? "Tag" : "Tagen"}, etwa ${Math.ceil(left / p.daysLeft)} pro Tag` : "Alle Lektionen geschafft!"}</span></div></div></section>`;
   h += '<div class="mods" role="group" aria-label="Modul">' + [1, 2, 3].map(k => { const a = (GM[k] || []).filter(id => grStars(id) > 0).length; return '<button data-act="g-mod" data-l="' + k + '" aria-pressed="' + (m === k) + '"><b>' + LV[k].name + '</b><span>' + a + ' / ' + (GM[k] || []).length + ' Lektionen</span></button>'; }).join("") + '</div>';
-  const cur = L.findIndex(l => !grStars(l.id));
-  h += '<section class="unit"><h3>' + LV[m].name + '</h3><p>' + L.length + ' Lektionen, zum Schluss der Modul-Test</p><div class="path" style="padding-top:46px">';
-  L.forEach((l, i) => {
-    const d = grStars(l.id), st = d ? "done" : i === cur ? "cur" : "locked";
-    h += '<div class="nw" style="--z:' + ZZ[i % 8] + (st === "cur" && i > 0 ? ";margin-top:38px" : "") + '">' + (st === "cur" ? '<span class="bubble">' + (i === 0 ? "Start" : "Weiter") + '</span>' : "") + '<button class="node ' + st + '" data-act="g-open" data-id="' + l.id + '" aria-label="' + esc(l.t) + '">' + (d ? ICON.check : st === "cur" ? ICON.play : ICON.lock) + '</button>' + (d ? '<div class="nstars">' + stars(d, 16) + '</div>' : "") + '<span class="cpl" style="max-width:190px">' + esc(l.t) + '</span></div>';
-  });
+  const cur = L.findIndex(l => !grStars(l.id)), per = Math.ceil(L.length / Math.max(1, Math.round(L.length / 3.5)));
   const tk = "m" + m, tr = S.gram && S.gram[tk], allDone = L.length > 0 && L.every(l => grStars(l.id) > 0);
-  h += '<div class="nw cpw"><button class="node cp ' + (tr ? "done" : allDone ? "" : "locked") + '" data-act="g-start" data-id="' + tk + '" aria-label="Modul-Test">' + ICON.trophy + '</button><span class="cpl">Modul-Test' + (tr ? '<br>Bestwert ' + tr.best + ' %' : "") + '</span></div></div></section>';
+  for (let u = 0; u * per < L.length; u++) {
+    const ls = L.slice(u * per, (u + 1) * per);
+    h += '<section class="unit"><h3>' + LV[m].name + ', Abschnitt ' + (u + 1) + '</h3><p>' + esc(ls[0].t) + (ls.length > 1 ? ' bis ' + esc(ls[ls.length - 1].t) : "") + '</p><div class="path" style="padding-top:46px">';
+    ls.forEach((l, k) => {
+      const i = u * per + k, d = grStars(l.id), st = d ? "done" : i === cur ? "cur" : "locked";
+      h += '<div class="nw" style="--z:' + ZZ[i % 8] + (st === "cur" && i > 0 ? ";margin-top:38px" : "") + '">' + (st === "cur" ? '<span class="bubble">' + (i === 0 ? "Start" : "Weiter") + '</span>' : "") + '<button class="node ' + st + '" data-act="g-open" data-id="' + l.id + '" aria-label="' + esc(l.t) + '">' + (d ? ICON.check : st === "cur" ? ICON.play : ICON.lock) + '</button>' + (d ? '<div class="nstars">' + stars(d, 16) + '</div>' : "") + '<span class="cpl" style="max-width:190px">' + esc(l.t) + '</span></div>';
+    });
+    if ((u + 1) * per >= L.length) h += '<div class="nw cpw"><button class="node cp ' + (tr ? "done" : allDone ? "" : "locked") + '" data-act="g-start" data-id="' + tk + '" aria-label="Modul-Test">' + ICON.trophy + '</button><span class="cpl">Modul-Test' + (tr ? '<br>Bestwert ' + tr.best + ' %' : "") + '</span></div>';
+    h += '</div></section>';
+  }
   h += '<div class="stack" style="margin-top:26px"><button class="btn ghost wide" data-act="g-mix">Grammatik-Mix, 20 Fragen aus allen Themen</button></div>';
   v.innerHTML = h;
 }
@@ -1130,12 +1134,11 @@ function renderGrSheet(v, l) {
   l.T.forEach(t => {
     h += '<div class="grt"><b>' + esc(t.n) + '</b><div class="grs"><table><thead><tr><th></th>' + t.c.map(c => '<th>' + esc(c) + '</th>').join("") + '</tr></thead><tbody>' + t.r.map(r => '<tr>' + r.map((x, i) => i ? '<td lang="la">' + esc(x) + '</td>' : '<td>' + esc(x) + '</td>').join("") + '</tr>').join("") + '</tbody></table></div></div>';
   });
-  h += '<div class="stack" style="margin-top:22px"><button class="btn primary wide" data-act="g-start" data-id="' + l.id + '">Üben (' + grQs([l], 12).length + ' Fragen)</button></div>';
+  h += '<div class="stack" style="margin-top:22px"><button class="btn primary wide" data-act="g-start" data-id="' + l.id + '">Üben (12 Fragen)</button></div>';
   v.innerHTML = h;
 }
 function startGr(id) {
   const isM = /^m[123]$/.test(id), ls = id === "mix" ? GR : isM ? GR.filter(l => GM[id[1]].includes(l.id)) : GR.filter(l => l.id === id);
-  if (isM && !ls.every(l => grStars(l.id) > 0)) return toast("Schließ zuerst alle Lektionen dieses Moduls ab");
   const qs = grQs(ls, id === "mix" ? 20 : isM ? 15 : 12);
   if (!qs.length) return;
   gv = { m: "quiz", id, qs, i: 0, ok: 0, bad: 0, fb: null, wrong: [] };
@@ -1335,7 +1338,7 @@ document.addEventListener("click", e => {
     case "blk-go": sess.blk = null; sess.bc = 0; sess.bm = 0; sess.bw = []; render(); window.scrollTo(0, 0); break;
     case "blk-save": sess = null; document.body.classList.remove("insess"); curView = "exam"; render(); window.scrollTo(0, 0); toast("Gespeichert, du machst später mit dem nächsten Block weiter"); break;
     case "endless-new": if (confirm("Den pausierten Stand verwerfen und neu starten?")) startEndless(+b.dataset.l, true); break;
-    case "g-open": { const mm = Object.keys(GM).find(k => GM[k].includes(id)), ix = mm ? GM[mm].indexOf(id) : 0; if (ix > 0 && !grStars(GM[mm][ix - 1])) { toast("Schließ zuerst die Lektion davor ab"); break; } gv = { m: "sheet", id }; render(); window.scrollTo(0, 0); break; }
+    case "g-open": gv = { m: "sheet", id }; render(); window.scrollTo(0, 0); break;
     case "g-back": gv = { m: "list" }; render(); window.scrollTo(0, 0); break;
     case "g-start": startGr(id); break;
     case "g-mod": S.gmod = +b.dataset.l; touch(); render(); window.scrollTo(0, 0); break;
