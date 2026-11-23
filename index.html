@@ -51,7 +51,7 @@ header .in{max-width:560px;margin:0 auto;padding:14px 20px 10px;display:flex;ali
 h1{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:800;font-size:30px;letter-spacing:-.025em;margin:0;line-height:1}
 .hstats{display:flex;gap:8px}
 .stat{display:inline-flex;align-items:center;gap:5px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:5px 12px 5px 9px;font-weight:700;font-variant-numeric:tabular-nums}
-.stat.f svg{color:var(--flame)} .stat.x svg{color:var(--gold)}
+.stat.f svg{color:var(--flame)} .stat.x svg{color:var(--gold)} .stat.g svg{color:var(--gold)}
 .stat.cold svg{color:var(--muted)}
 
 main{max-width:560px;margin:0 auto;padding:8px 20px calc(100px + env(safe-area-inset-bottom,0px))}
@@ -299,7 +299,7 @@ nav.tabs button{font-size:10px;min-width:0;padding-left:0;padding-right:0}
   <button data-act="tab" data-v="list">
     <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="4" cy="6" r="1.3" fill="currentColor"/><circle cx="4" cy="12" r="1.3" fill="currentColor"/><circle cx="4" cy="18" r="1.3" fill="currentColor"/></svg>Wörter</button>
   <button data-act="tab" data-v="add">
-    <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>Einstellungen</button>
+    <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Einstellungen</button>
 </div></nav>
 
 <dialog id="ldlg"><h2 id="lt"></h2><p class="dsub" id="ls"></p><div class="chips" id="lw"></div>
@@ -732,7 +732,7 @@ const lvOpts = sel => [1, 2, 3].map(l => `<option value="${l}" ${l === sel ? "se
 function render() {
   if (sess) return renderSession();
   const s = streak();
-  $("#hs").innerHTML = `<span class="stat f ${(S.days[today()] || 0) > 0 ? "" : "cold"}" aria-label="${s} Tage in Folge">${ICON.flame}${s}</span><span class="stat x" aria-label="${S.xp} XP">${ICON.bolt}${S.xp}</span>`;
+  $("#hs").innerHTML = (curView === "gram" ? `<span class="stat g" aria-label="Sterne in der Grammatik">${ICON.star(16)}${Object.keys(S.gram || {}).filter(k => !/^(mix|m\d|s\d-\d+)$/.test(k)).reduce((a, k) => a + (S.gram[k].stars || 0), 0)}</span>` : "") + `<span class="stat f ${(S.days[today()] || 0) > 0 ? "" : "cold"}" aria-label="${s} Tage in Folge">${ICON.flame}${s}</span><span class="stat x" aria-label="${S.xp} XP">${ICON.bolt}${S.xp}</span>`;
   document.querySelectorAll("nav.tabs button").forEach(b => b.dataset.v === (curView === "review" ? "list" : curView) ? b.setAttribute("aria-current", "page") : b.removeAttribute("aria-current"));
   const nErr = S.cards.filter(c => c.miss).length, tb = $('nav.tabs [data-v="list"]');
   tb.querySelector(".tabn")?.remove();
@@ -1095,6 +1095,7 @@ function grQs(ls, n) {
   if (all.length < n) shuffle(mcs).forEach(q => { if (all.length < n && !all.includes(q)) all.push(q); });
   return shuffle(all).map(q => Object.assign({}, q, { o: shuffle([q.a, ...q.w]) }));
 }
+const grPer = n => Math.ceil(n / Math.max(1, Math.round(n / 3.5)));
 function renderGram() {
   document.body.classList.toggle("insess", gv.m === "quiz" || gv.m === "end");
   const v = $("#view");
@@ -1109,7 +1110,7 @@ function renderGram() {
   const m = S.gmod || 1, L = (GM[m] || []).map(id => GR.find(l => l.id === id)).filter(Boolean), p = plan(), left = GR.filter(l => !grStars(l.id)).length;
   let h = `<section class="goal plan"><div class="ptop"><span class="flame ${(S.days[today()] || 0) > 0 ? "" : "cold"}">${ICON.flame}<b>${streak()}</b></span><div><b class="disp">Ziel ${fmtDate(S.deadline)}</b><span>${p.over ? "Das Datum ist vorbei. Setz unter „Einstellungen“ ein neues Ziel." : left ? `Noch ${left} von ${GR.length} Lektionen in ${p.daysLeft} ${p.daysLeft === 1 ? "Tag" : "Tagen"}, etwa ${Math.ceil(left / p.daysLeft)} pro Tag` : "Alle Lektionen geschafft!"}</span></div></div></section>`;
   h += '<div class="mods" role="group" aria-label="Modul">' + [1, 2, 3].map(k => { const a = (GM[k] || []).filter(id => grStars(id) > 0).length; return '<button data-act="g-mod" data-l="' + k + '" aria-pressed="' + (m === k) + '"><b>' + LV[k].name + '</b><span>' + a + ' / ' + (GM[k] || []).length + ' Lektionen</span></button>'; }).join("") + '</div>';
-  const cur = L.findIndex(l => !grStars(l.id)), per = Math.ceil(L.length / Math.max(1, Math.round(L.length / 3.5)));
+  const cur = L.findIndex(l => !grStars(l.id)), per = grPer(L.length);
   const tk = "m" + m, tr = S.gram && S.gram[tk], allDone = L.length > 0 && L.every(l => grStars(l.id) > 0);
   for (let u = 0; u * per < L.length; u++) {
     const ls = L.slice(u * per, (u + 1) * per);
@@ -1118,10 +1119,11 @@ function renderGram() {
       const i = u * per + k, d = grStars(l.id), st = d ? "done" : i === cur ? "cur" : "locked";
       h += '<div class="nw" style="--z:' + ZZ[i % 8] + (st === "cur" && i > 0 ? ";margin-top:38px" : "") + '">' + (st === "cur" ? '<span class="bubble">' + (i === 0 ? "Start" : "Weiter") + '</span>' : "") + '<button class="node ' + st + '" data-act="g-open" data-id="' + l.id + '" aria-label="' + esc(l.t) + '">' + (d ? ICON.check : st === "cur" ? ICON.play : ICON.lock) + '</button>' + (d ? '<div class="nstars">' + stars(d, 16) + '</div>' : "") + '<span class="cpl" style="max-width:190px">' + esc(l.t) + '</span></div>';
     });
+    if ((u + 1) * per < L.length) { const sk = "s" + m + "-" + u, sr = S.gram && S.gram[sk], sd = ls.every(l => grStars(l.id) > 0); h += '<div class="nw cpw"><button class="node cp ' + (sr ? "done" : sd ? "" : "locked") + '" data-act="g-start" data-id="' + sk + '" aria-label="Abschnitts-Prüfung">' + ICON.trophy + '</button><span class="cpl">Abschnitts-Prüfung' + (sr ? '<br>Bestwert ' + sr.best + ' %' : "") + '</span></div>'; }
     if ((u + 1) * per >= L.length) h += '<div class="nw cpw"><button class="node cp ' + (tr ? "done" : allDone ? "" : "locked") + '" data-act="g-start" data-id="' + tk + '" aria-label="Modul-Test">' + ICON.trophy + '</button><span class="cpl">Modul-Test' + (tr ? '<br>Bestwert ' + tr.best + ' %' : "") + '</span></div>';
     h += '</div></section>';
   }
-  h += '<div class="stack" style="margin-top:26px"><button class="btn ghost wide" data-act="g-mix">Grammatik-Mix, 20 Fragen aus allen Themen</button></div>';
+  h += '<div class="stack" style="margin-top:26px"><button class="btn ghost wide" data-act="g-mix">Grammatik-Mix, 20 Fragen aus allem, was du schon gelernt hast</button></div>';
   v.innerHTML = h;
 }
 function renderGrSheet(v, l) {
@@ -1138,8 +1140,13 @@ function renderGrSheet(v, l) {
   v.innerHTML = h;
 }
 function startGr(id) {
-  const isM = /^m[123]$/.test(id), ls = id === "mix" ? GR : isM ? GR.filter(l => GM[id[1]].includes(l.id)) : GR.filter(l => l.id === id);
-  if (isM && !ls.every(l => grStars(l.id) > 0)) return toast("Schließ zuerst alle Lektionen dieses Moduls ab");
+  const isM = /^m[123]$/.test(id), isS = /^s[123]-\d+$/.test(id);
+  let ls;
+  if (id === "mix") { ls = GR.filter(l => grStars(l.id) > 0); if (!ls.length) return toast("Schließ zuerst eine Lektion ab, dann kannst du den Mix üben"); }
+  else if (isM) ls = GR.filter(l => GM[id[1]].includes(l.id));
+  else if (isS) { const ids = GM[id[1]], per = grPer(ids.length), u = +id.split("-")[1]; ls = ids.slice(u * per, (u + 1) * per).map(x => GR.find(l => l.id === x)).filter(Boolean); }
+  else ls = GR.filter(l => l.id === id);
+  if ((isM || isS) && !ls.every(l => grStars(l.id) > 0)) return toast(isM ? "Schließ zuerst alle Lektionen dieses Moduls ab" : "Schließ zuerst alle Lektionen dieses Abschnitts ab");
   const qs = grQs(ls, id === "mix" ? 20 : isM ? 15 : 12);
   if (!qs.length) return;
   gv = { m: "quiz", id, qs, i: 0, ok: 0, bad: 0, fb: null, wrong: [] };
@@ -1178,7 +1185,7 @@ function grFinish() {
 }
 function renderGrEnd(v) {
   const r = gv.res, l = gv.id === "mix" ? null : GR.find(x => x.id === gv.id);
-  v.innerHTML = '<div class="end"><h2>' + (l ? esc(l.t) : /^m\d$/.test(gv.id) ? "Modul-Test " + LV[gv.id[1]].name : "Grammatik-Mix") + '</h2><div class="bigstars">' + stars(r.stars, 44) + '</div><div class="pct" style="color:' + (r.acc >= 67 ? "var(--good)" : r.acc >= 50 ? "var(--gold)" : "var(--bad)") + '">' + r.acc + ' %</div><span class="grade">' + gv.ok + ' von ' + gv.qs.length + ' richtig, ' + gv.bad + ' Fehler</span><div class="xpbig" style="font-size:44px;margin:10px 0 18px">+' + r.xp + ' XP</div>' + (r.lvl ? '<span class="badge">Stufe ' + r.lvl + ' erreicht</span>' : "")
+  v.innerHTML = '<div class="end"><h2>' + (l ? esc(l.t) : /^m\d$/.test(gv.id) ? "Modul-Test " + LV[gv.id[1]].name : /^s\d-\d+$/.test(gv.id) ? "Abschnitts-Prüfung " + LV[gv.id[1]].name + ", Abschnitt " + (+gv.id.split("-")[1] + 1) : "Grammatik-Mix") + '</h2><div class="bigstars">' + stars(r.stars, 44) + '</div><div class="pct" style="color:' + (r.acc >= 67 ? "var(--good)" : r.acc >= 50 ? "var(--gold)" : "var(--bad)") + '">' + r.acc + ' %</div><span class="grade">' + gv.ok + ' von ' + gv.qs.length + ' richtig, ' + gv.bad + ' Fehler</span><div class="xpbig" style="font-size:44px;margin:10px 0 18px">+' + r.xp + ' XP</div>' + (r.lvl ? '<span class="badge">Stufe ' + r.lvl + ' erreicht</span>' : "")
     + (gv.wrong.length ? '<h3 class="lh" style="margin-top:14px">Das solltest du dir noch einmal ansehen</h3><ul class="mist">' + gv.wrong.map(q => '<li><div><b' + (q.lat ? ' lang="la"' : "") + '>' + esc(q.h) + (q.s ? ", " + esc(q.s) : "") + '</b><span' + (q.lat ? ' lang="la"' : "") + '>' + esc(q.a) + '</span></div></li>').join("") + '</ul>' : '<p class="muted">Keine Fehler. Stark!</p>')
     + '<div class="stack" style="margin-top:18px"><button class="btn primary wide" data-act="g-start" data-id="' + gv.id + '">Nochmal üben</button>' + (l ? '<button class="btn ghost wide" data-act="g-open" data-id="' + l.id + '">Zum Merkblatt</button>' : "") + '<button class="btn ghost wide" data-act="g-back">Alle Lektionen</button></div><p class="muted">Fortschritt gespeichert</p></div>';
 }
