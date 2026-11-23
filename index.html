@@ -256,6 +256,25 @@ nav.tabs button{position:relative}
 .node.cp.done{background:var(--gold);box-shadow:0 6px 0 color-mix(in srgb,var(--gold) 65%,#000)}
 .node.cp.locked{background:var(--lock);color:var(--muted);box-shadow:0 6px 0 var(--lock-deep)}
 .cpl{margin-top:10px;font-size:14px;font-weight:700;color:var(--muted);text-align:center;line-height:1.3}
+.gw{min-height:0;padding:44px 20px 22px;font-size:clamp(19px,5.4vw,25px);line-height:1.3}
+.gw small{display:block;font:600 16px "Atkinson Hyperlegible",system-ui,sans-serif;color:var(--muted);margin-top:10px}
+.grc{display:flex;align-items:center;gap:14px;width:100%;text-align:left;font:inherit;background:var(--surface);border:0;border-radius:16px;padding:13px 16px;margin-top:10px;color:var(--ink)}
+.grc .n{flex:none;width:34px;height:34px;border-radius:50%;background:var(--accent-soft);color:var(--accent-deep);display:grid;place-items:center;font-weight:700;font-size:15px}
+.grc b{display:block;font-family:"Bricolage Grotesque",system-ui,sans-serif;font-size:19px;line-height:1.2}
+.grc .s{display:block;color:var(--muted);font-size:14px}
+.grc .st{margin-left:auto;display:flex;gap:1px;color:var(--gold)}
+.grc .st .off{color:var(--lock)}
+.grr{margin:10px 0 0;padding-left:20px}.grr li{margin:7px 0}
+.grt{margin-top:16px}.grt>b{display:block;font-size:15px;margin-bottom:6px}
+.grs{overflow-x:auto;border-radius:12px;border:1px solid var(--line);background:var(--surface)}
+.grs table{border-collapse:collapse;width:100%;font-size:15px}
+.grs th,.grs td{padding:7px 10px;text-align:left;white-space:nowrap;border-bottom:1px solid var(--line)}
+.grs th{color:var(--muted);font-weight:700;font-size:13px}
+.grs td:first-child{color:var(--muted);font-weight:700}
+.grs td+td{font-weight:600}
+.grs tr:last-child td{border-bottom:0}
+nav.tabs button{font-size:10px;min-width:0;padding-left:0;padding-right:0}
+.grb{background:none;border:0;color:var(--accent);font:inherit;font-weight:700;padding:6px 0;margin-top:4px}
 </style>
 </head>
 <body>
@@ -273,6 +292,8 @@ nav.tabs button{position:relative}
     <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 0 1 13.7-5.6L20 8.5M20 4v4.5h-4.5M20 12a8 8 0 0 1-13.7 5.6L4 15.5M4 20v-4.5h4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Wiederholen</button>
   <button data-act="tab" data-v="exam">
     <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9 4V3h6v1M8.5 12.5l2.3 2.3 4.7-4.8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Prüfung</button>
+  <button data-act="tab" data-v="gram">
+    <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H19v15H6.5A1.5 1.5 0 0 0 5 19.5v-15zM5 19.5A1.5 1.5 0 0 0 6.5 21H19v-3M9 7.5h6M9 11h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Grammatik</button>
   <button data-act="tab" data-v="list">
     <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="4" cy="6" r="1.3" fill="currentColor"/><circle cx="4" cy="12" r="1.3" fill="currentColor"/><circle cx="4" cy="18" r="1.3" fill="currentColor"/></svg>Wörter</button>
   <button data-act="tab" data-v="add">
@@ -342,7 +363,7 @@ const ICON = {
 const stars = (n, s) => [1,2,3].map(i => `<span class="${i <= n ? "" : "off"}">${ICON.star(s)}</span>`).join("");
 
 /* ---------- Daten ---------- */
-function defaultState() { return { v: 4, t: 0, cards: [], done: {}, xp: 0, days: {}, learned: {}, deadline: DEADLINE, lastBackup: 0, mod: 1, exams: {}, cps: {}, endless: {}, endlessBest: {}, official: {}, officialBest: {} }; }
+function defaultState() { return { v: 4, t: 0, cards: [], done: {}, xp: 0, days: {}, learned: {}, deadline: DEADLINE, lastBackup: 0, mod: 1, exams: {}, cps: {}, endless: {}, endlessBest: {}, official: {}, officialBest: {}, gram: {} }; }
 function migrate(s) {
   if (!s || !Array.isArray(s.cards)) return defaultState();
   const n = Object.assign(defaultState(), s);
@@ -714,7 +735,8 @@ function render() {
   const nErr = S.cards.filter(c => c.miss).length, tb = $('nav.tabs [data-v="review"]');
   tb.querySelector(".tabn")?.remove();
   if (nErr) tb.insertAdjacentHTML("beforeend", `<span class="tabn" aria-label="${nErr} offene Fehler">${nErr > 99 ? "99+" : nErr}</span>`);
-  ({ learn: renderLearn, review: renderReview, exam: renderExams, list: renderList, add: renderAdd })[curView]();
+  document.body.classList.remove("insess");
+  ({ learn: renderLearn, review: renderReview, exam: renderExams, gram: renderGram, list: renderList, add: renderAdd })[curView]();
   updateBadge();
 }
 function show(v) { if (v === "learn" && curView !== "learn") scrollCur = true; curView = v; render(); if (!scrollCur) window.scrollTo(0, 0); }
@@ -1043,6 +1065,108 @@ function renderEnd(v) {
   }
 }
 
+/* ---------- Grammatik ---------- */
+let GR = null, grBusy = null, gv = { m: "list" };
+function loadGr() {
+  if (GR) return Promise.resolve(GR);
+  if (grBusy) return grBusy;
+  return grBusy = Promise.all(["grammatik1.json", "grammatik2.json", "grammatik3.json"].map(f => fetch(f + "?z=" + Date.now(), { cache: "no-cache" }).then(r => { if (!r.ok) throw new Error("gr"); return r.json(); })))
+    .then(a => { GR = [].concat(...a.map(x => x.L)); grBusy = null; return GR; })
+    .catch(e => { grBusy = null; throw e; });
+}
+const grStars = id => (S.gram && S.gram[id] && S.gram[id].stars) || 0;
+function grQs(ls, n) {
+  const mcs = [], cells = [];
+  ls.forEach(l => {
+    l.Q.forEach(q => mcs.push({ h: q[0], s: "", a: q[1], w: q[2], e: q[3] || "", lat: false }));
+    l.T.forEach((t, ti) => {
+      const pool = [];
+      t.r.forEach(r => r.slice(1).forEach(v => { if (v && v !== "-") pool.push(v); }));
+      t.r.forEach(r => t.c.forEach((c, ci) => {
+        const a = r[ci + 1]; if (!a || a === "-") return;
+        const alts = [...new Set(pool.filter(x => x !== a))]; if (alts.length < 2) return;
+        cells.push({ h: t.n, s: t.c.length > 1 ? r[0] + ", " + c : r[0], a, w: shuffle(alts).slice(0, 3), e: "", lat: true, tb: l.id + ti });
+      }));
+    });
+  });
+  const nm = Math.min(mcs.length, cells.length ? Math.ceil(n * 0.45) : n);
+  const M = shuffle(mcs).slice(0, nm), C = [], cnt = {}, rest = n - M.length;
+  for (const c of shuffle(cells)) { if (C.length >= rest) break; if ((cnt[c.tb] || 0) >= 3) continue; cnt[c.tb] = (cnt[c.tb] || 0) + 1; C.push(c); }
+  for (const c of shuffle(cells)) { if (C.length >= rest) break; if (!C.includes(c)) C.push(c); }
+  let all = [...M, ...C];
+  if (all.length < n) shuffle(mcs).forEach(q => { if (all.length < n && !all.includes(q)) all.push(q); });
+  return shuffle(all).map(q => Object.assign({}, q, { o: shuffle([q.a, ...q.w]) }));
+}
+function renderGram() {
+  document.body.classList.toggle("insess", gv.m === "quiz" || gv.m === "end");
+  const v = $("#view");
+  if (!GR) {
+    v.innerHTML = '<p class="emptyline" id="grl">Grammatik wird geladen …</p>';
+    loadGr().then(() => { if (!sess && curView === "gram") render(); }).catch(() => { const e = $("#grl"); if (e) e.textContent = "Die Grammatik konnte nicht geladen werden. Öffne die App einmal mit Internet."; });
+    return;
+  }
+  if (gv.m === "quiz") return renderGrQuiz(v);
+  if (gv.m === "end") return renderGrEnd(v);
+  if (gv.m === "sheet") return renderGrSheet(v, GR.find(l => l.id === gv.id));
+  const done = GR.filter(l => grStars(l.id) > 0).length;
+  let h = '<h2 class="modh" style="margin-top:8px">Grammatik</h2><p class="help" style="margin:0 2px 8px">Alle Themen aus der Vorlesung zur Latein-Grammatik. Zuerst das Merkblatt lesen, dann mit Fragen üben. ' + done + ' von ' + GR.length + ' Lektionen geübt.</p>';
+  h += '<button class="grc" data-act="g-mix"><span class="n">★</span><div><b>Grammatik-Mix</b><span class="s">20 Fragen quer durch alle Themen</span></div><span class="st">' + stars(grStars("mix"), 18) + '</span></button>';
+  GR.forEach((l, i) => { h += '<button class="grc" data-act="g-open" data-id="' + l.id + '"><span class="n">' + (i + 1) + '</span><div><b>' + esc(l.t) + '</b><span class="s">' + esc(l.s) + '</span></div><span class="st">' + stars(grStars(l.id), 18) + '</span></button>'; });
+  v.innerHTML = h;
+}
+function renderGrSheet(v, l) {
+  let h = '<button class="grb" data-act="g-back">‹ Alle Lektionen</button><h2 class="modh" style="margin-top:4px">' + esc(l.t) + '</h2><p class="help" style="margin:0">' + esc(l.s) + '</p><ul class="grr">' + l.r.map(x => '<li>' + esc(x) + '</li>').join("") + '</ul>';
+  l.T.forEach(t => {
+    h += '<div class="grt"><b>' + esc(t.n) + '</b><div class="grs"><table><thead><tr><th></th>' + t.c.map(c => '<th>' + esc(c) + '</th>').join("") + '</tr></thead><tbody>' + t.r.map(r => '<tr>' + r.map((x, i) => i ? '<td lang="la">' + esc(x) + '</td>' : '<td>' + esc(x) + '</td>').join("") + '</tr>').join("") + '</tbody></table></div></div>';
+  });
+  h += '<div class="stack" style="margin-top:22px"><button class="btn primary wide" data-act="g-start" data-id="' + l.id + '">Üben (12 Fragen)</button></div>';
+  v.innerHTML = h;
+}
+function startGr(id) {
+  const ls = id === "mix" ? GR : GR.filter(l => l.id === id);
+  const qs = grQs(ls, id === "mix" ? 20 : 12);
+  if (!qs.length) return;
+  gv = { m: "quiz", id, qs, i: 0, ok: 0, bad: 0, fb: null, wrong: [] };
+  render(); window.scrollTo(0, 0);
+}
+function renderGrQuiz(v) {
+  const q = gv.qs[gv.i];
+  let h = '<div class="stop"><button class="x" data-act="g-quit" aria-label="Beenden">' + ICON.x + '</button><div class="prog"><i style="width:' + Math.min(100, gv.i / gv.qs.length * 100) + '%"></i></div><span class="muted">' + (gv.i + 1) + ' / ' + gv.qs.length + '</span></div>';
+  h += '<h2 class="ptitle">' + (q.lat ? "Welche Form ist richtig?" : "Was stimmt?") + '</h2><div class="word gw">' + esc(q.h) + (q.s ? '<small>' + esc(q.s) + '</small>' : "") + '</div><div class="ops">';
+  h += q.o.map((o, k) => '<button class="op ' + (gv.fb ? (o === q.a ? "right" : k === gv.fb.pick ? "wrong" : "") : "") + '" data-act="g-pick" data-k="' + k + '" ' + (gv.fb ? "disabled" : "") + (q.lat ? ' lang="la"' : "") + '>' + esc(o) + '</button>').join("") + '</div>';
+  if (gv.fb) { const ok = gv.fb.ok; h += '<div class="fb ' + (ok ? "" : "no") + '" role="status"><div class="in"><div class="fbh"><h3>' + (ok ? "Richtig!" : "Nicht ganz") + '</h3></div><p>' + (ok ? esc(q.e) : 'Richtig ist: <mark' + (q.lat ? ' lang="la"' : "") + '>' + esc(q.a) + '</mark>' + (q.e ? '<br>' + esc(q.e) : "")) + '</p><button class="btn ' + (ok ? "good" : "bad") + ' wide" id="fbgo" data-act="g-next">Weiter</button></div></div>'; }
+  v.innerHTML = h;
+  if (gv.fb) $("#fbgo")?.focus({ preventScroll: true });
+}
+function grPick(k) {
+  if (gv.fb) return;
+  const q = gv.qs[gv.i], ok = q.o[k] === q.a;
+  if (ok) gv.ok++; else { gv.bad++; gv.wrong.push(q); }
+  gv.fb = { ok, pick: k }; render();
+}
+function grNext() {
+  gv.fb = null; gv.i++;
+  if (gv.i >= gv.qs.length) return grFinish();
+  render(); window.scrollTo(0, 0);
+}
+function grFinish() {
+  const n = gv.qs.length, acc = Math.round(gv.ok / n * 100), stN = gv.bad === 0 ? 3 : gv.bad <= 2 ? 2 : acc >= 50 ? 1 : 0;
+  const xp = gv.ok + (gv.bad === 0 ? 5 : 0), lvl0 = levelInfo(S.xp).n;
+  addXP(xp);
+  S.gram = S.gram || {};
+  const o = S.gram[gv.id] || { stars: 0, best: 0, n: 0 };
+  S.gram[gv.id] = { stars: Math.max(o.stars, stN), best: Math.max(o.best, acc), n: o.n + 1 };
+  touch();
+  gv.m = "end"; gv.res = { acc, stars: stN, xp, lvl: levelInfo(S.xp).n > lvl0 ? levelInfo(S.xp).n : 0 };
+  render(); window.scrollTo(0, 0);
+}
+function renderGrEnd(v) {
+  const r = gv.res, l = gv.id === "mix" ? null : GR.find(x => x.id === gv.id);
+  v.innerHTML = '<div class="end"><h2>' + (l ? esc(l.t) : "Grammatik-Mix") + '</h2><div class="bigstars">' + stars(r.stars, 44) + '</div><div class="pct" style="color:' + (r.acc >= 67 ? "var(--good)" : r.acc >= 50 ? "var(--gold)" : "var(--bad)") + '">' + r.acc + ' %</div><span class="grade">' + gv.ok + ' von ' + gv.qs.length + ' richtig, ' + gv.bad + ' Fehler</span><div class="xpbig" style="font-size:44px;margin:10px 0 18px">+' + r.xp + ' XP</div>' + (r.lvl ? '<span class="badge">Stufe ' + r.lvl + ' erreicht</span>' : "")
+    + (gv.wrong.length ? '<h3 class="lh" style="margin-top:14px">Das solltest du dir noch einmal ansehen</h3><ul class="mist">' + gv.wrong.map(q => '<li><div><b' + (q.lat ? ' lang="la"' : "") + '>' + esc(q.h) + (q.s ? ", " + esc(q.s) : "") + '</b><span' + (q.lat ? ' lang="la"' : "") + '>' + esc(q.a) + '</span></div></li>').join("") + '</ul>' : '<p class="muted">Keine Fehler. Stark!</p>')
+    + '<div class="stack" style="margin-top:18px"><button class="btn primary wide" data-act="g-start" data-id="' + gv.id + '">Nochmal üben</button>' + (l ? '<button class="btn ghost wide" data-act="g-open" data-id="' + l.id + '">Zum Merkblatt</button>' : "") + '<button class="btn ghost wide" data-act="g-back">Alle Lektionen</button></div><p class="muted">Fortschritt gespeichert</p></div>';
+}
+
 /* ---------- Info ---------- */
 function openInfo(id) {
   const c = byId(id); if (!c) return; infoId = id;
@@ -1189,6 +1313,13 @@ document.addEventListener("click", e => {
     case "blk-go": sess.blk = null; sess.bc = 0; sess.bm = 0; sess.bw = []; render(); window.scrollTo(0, 0); break;
     case "blk-save": sess = null; document.body.classList.remove("insess"); curView = "exam"; render(); window.scrollTo(0, 0); toast("Gespeichert, du machst später mit dem nächsten Block weiter"); break;
     case "endless-new": if (confirm("Den pausierten Stand verwerfen und neu starten?")) startEndless(+b.dataset.l, true); break;
+    case "g-open": gv = { m: "sheet", id }; render(); window.scrollTo(0, 0); break;
+    case "g-back": gv = { m: "list" }; render(); window.scrollTo(0, 0); break;
+    case "g-start": startGr(id); break;
+    case "g-mix": startGr("mix"); break;
+    case "g-pick": grPick(+b.dataset.k); break;
+    case "g-next": grNext(); break;
+    case "g-quit": if (gv.m === "quiz" && gv.i > 0 && !confirm("Abbrechen? Der Fortschritt dieser Runde geht verloren.")) break; gv = { m: "list" }; render(); window.scrollTo(0, 0); break;
     case "next": advance(); break;
     case "pick": { if (sess.fb) break; const st = sess.steps[sess.i]; answer(id === st.id, id); break; }
     case "spell": { if (sess.fb) break; const st = sess.steps[sess.i], w = st.opts[+b.dataset.k]; answer(w === st.right, w); break; }
