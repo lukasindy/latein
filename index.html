@@ -903,7 +903,7 @@ function stOff(st) {
 function renderExams() {
   const offm = examMode === "off";
   let h = `<h2 class="modh" style="margin-top:8px">Prüfungen</h2><div class="seg" role="group" aria-label="Art der Prüfung"><button data-act="exmode" data-m="random" aria-pressed="${!offm}">Random Prüfungen</button><button data-act="exmode" data-m="off" aria-pressed="${offm}">Offiziell</button></div>
-    <p class="help" style="margin:8px 2px 14px">${offm ? "Die Fragen und Antwortmöglichkeiten genau wie in der offiziellen Übung (JKU Moodle), mit allen 1.076 bzw. 1.082 Fragen. Entweder in zufälliger oder in fester Reihenfolge. Du bekommst immer 30 Fragen am Stück, danach siehst du deine Bewertung und kannst weitermachen oder speichern." : "Zufällige Wörter aus deinem Vokabelstock, ohne Hilfe und ohne Info-Button. Am Ende siehst du deine Note und deine Fehler. Gut, um zu testen, wie fit du gerade bist."}</p>`;
+    <p class="help" style="margin:8px 2px 14px">${offm ? "Die Fragen und Antwortmöglichkeiten genau wie in der offiziellen Übung, mit allen 1.076 bzw. 1.082 Fragen. Entweder in zufälliger oder in fester Reihenfolge. Du bekommst immer 30 Fragen am Stück, danach siehst du deine Bewertung und kannst weitermachen oder speichern." : "Zufällige Wörter aus deinem Vokabelstock, ohne Hilfe und ohne Info-Button. Am Ende siehst du deine Note und deine Fehler. Gut, um zu testen, wie fit du gerade bist."}</p>`;
   if (!offm) {
   [1, 2, 3].forEach(l => {
     const n = S.cards.filter(c => c.level === l).length, e = S.exams[l];
