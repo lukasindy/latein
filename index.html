@@ -287,13 +287,11 @@ nav.tabs button{font-size:10px;min-width:0;padding-left:0;padding-right:0}
 
 <nav class="tabs" aria-label="Bereiche"><div class="in">
   <button data-act="tab" data-v="learn" aria-current="page">
-    <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l9 5-9 5-9-5 9-5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M6 10.5V15c0 1.5 2.7 3 6 3s6-1.5 6-3v-4.5" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>Lernen</button>
-  <button data-act="tab" data-v="review">
-    <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 0 1 13.7-5.6L20 8.5M20 4v4.5h-4.5M20 12a8 8 0 0 1-13.7 5.6L4 15.5M4 20v-4.5h4.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Wiederholen</button>
-  <button data-act="tab" data-v="exam">
-    <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9 4V3h6v1M8.5 12.5l2.3 2.3 4.7-4.8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Prüfung</button>
+    <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l9 5-9 5-9-5 9-5z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M6 10.5V15c0 1.5 2.7 3 6 3s6-1.5 6-3v-4.5" fill="none" stroke="currentColor" stroke-width="1.8"/></svg>Vokabeln</button>
   <button data-act="tab" data-v="gram">
     <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H19v15H6.5A1.5 1.5 0 0 0 5 19.5v-15zM5 19.5A1.5 1.5 0 0 0 6.5 21H19v-3M9 7.5h6M9 11h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Grammatik</button>
+  <button data-act="tab" data-v="exam">
+    <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9 4V3h6v1M8.5 12.5l2.3 2.3 4.7-4.8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Prüfung</button>
   <button data-act="tab" data-v="list">
     <svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="4" cy="6" r="1.3" fill="currentColor"/><circle cx="4" cy="12" r="1.3" fill="currentColor"/><circle cx="4" cy="18" r="1.3" fill="currentColor"/></svg>Wörter</button>
   <button data-act="tab" data-v="add">
@@ -731,8 +729,8 @@ function render() {
   if (sess) return renderSession();
   const s = streak();
   $("#hs").innerHTML = `<span class="stat f ${(S.days[today()] || 0) > 0 ? "" : "cold"}" aria-label="${s} Tage in Folge">${ICON.flame}${s}</span><span class="stat x" aria-label="${S.xp} XP">${ICON.bolt}${S.xp}</span>`;
-  document.querySelectorAll("nav.tabs button").forEach(b => b.dataset.v === curView ? b.setAttribute("aria-current", "page") : b.removeAttribute("aria-current"));
-  const nErr = S.cards.filter(c => c.miss).length, tb = $('nav.tabs [data-v="review"]');
+  document.querySelectorAll("nav.tabs button").forEach(b => b.dataset.v === (curView === "review" ? "list" : curView) ? b.setAttribute("aria-current", "page") : b.removeAttribute("aria-current"));
+  const nErr = S.cards.filter(c => c.miss).length, tb = $('nav.tabs [data-v="list"]');
   tb.querySelector(".tabn")?.remove();
   if (nErr) tb.insertAdjacentHTML("beforeend", `<span class="tabn" aria-label="${nErr} offene Fehler">${nErr > 99 ? "99+" : nErr}</span>`);
   document.body.classList.remove("insess");
@@ -807,10 +805,11 @@ function openLesson(i) {
   $("#ldlg").showModal();
 }
 
+const wSeg = a => `<div class="seg" style="margin:8px 0 10px"><button data-act="tab" data-v="review" aria-pressed="${a === "review"}">Wiederholen</button><button data-act="tab" data-v="list" aria-pressed="${a === "list"}">Alle Wörter</button></div>`;
 function renderReview() {
   const due = dueSeen().length, errs = S.cards.filter(c => c.miss).sort((a, b) => b.miss - a.miss), seen = S.cards.filter(c => c.seen);
   const cnt = l => seen.filter(c => !l || c.level === l).length;
-  let h = `<h2 class="modh" style="margin-top:8px">Wiederholen</h2><p class="help" style="margin-top:4px">Freiwillig: Hier besserst du Fehler aus Lektionen und Prüfungen aus und frischst gelernte Wörter auf. Die Lektionen laufen unabhängig davon weiter.</p>`;
+  let h = wSeg("review") + `<h2 class="modh" style="margin-top:4px">Wiederholen</h2><p class="help" style="margin-top:4px">Freiwillig: Hier besserst du Fehler aus Lektionen und Prüfungen aus und frischst gelernte Wörter auf. Die Lektionen laufen unabhängig davon weiter.</p>`;
   const dueCard = `<div class="exam"><div><b>Fällige Wörter</b><span>${due ? `${due} ${due === 1 ? "Wort ist" : "Wörter sind"} nach Plan wieder dran` : seen.length ? "Gerade ist nichts fällig" : "Noch keine Wörter gelernt"}</span></div><button class="btn ghost" data-act="review" data-m="due" ${due ? "" : "disabled"}>Starten</button></div>`;
   let fixPart = "";
   fixPart += `<div class="exam fix"><div><b>Fehler ausbessern</b><span>${errs.length ? `${errs.length} ${errs.length === 1 ? "Wort" : "Wörter"}, bei denen du falsch gewählt hast. Richtig beantwortet verschwinden sie aus der Liste.` : "Keine offenen Fehler. Sehr gut!"}</span></div><button class="btn primary" data-act="review" data-m="fix" ${errs.length ? "" : "disabled"}>Starten</button></div>`;
@@ -1179,7 +1178,7 @@ function openInfo(id) {
 
 /* ---------- Wörter ---------- */
 function renderList() {
-  $("#view").innerHTML = `<div class="search"><input id="q" type="search" placeholder="Suchen" value="${esc(listQ)}" aria-label="Wörter suchen"></div><div id="lwrap"></div>`;
+  $("#view").innerHTML = wSeg("list") + `<div class="search"><input id="q" type="search" placeholder="Suchen" value="${esc(listQ)}" aria-label="Wörter suchen"></div><div id="lwrap"></div>`;
   $("#q").addEventListener("input", e => { listQ = e.target.value; fillList(); });
   fillList();
 }
