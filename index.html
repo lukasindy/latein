@@ -1242,14 +1242,6 @@ function delCard() {
 /* ---------- Einstellungen ---------- */
 function renderAdd() {
   $("#view").innerHTML = `
-  <section class="panel${needsBackup() ? " warn" : ""}"><h2>Sicherung &amp; Dateien</h2>
-    <p class="help">Dein Fortschritt wird nach jeder Antwort und jeder Lektion automatisch auf diesem Gerät gespeichert. Exportiere ihn regelmäßig als Datei, damit er auch nach einem Gerätewechsel erhalten bleibt.</p>
-    <div class="stack">
-      <button class="btn primary" data-act="export-prog">Fortschritt exportieren</button>
-      <button class="btn ghost" data-act="import-prog">Fortschritt importieren</button>
-      <button class="btn ghost" data-act="load-vocab">Vokabeldatei laden</button>
-    </div>
-    <p class="status">${backupText()}</p></section>
   <section class="panel"><h2>Lernziel</h2>
     <p class="help">Bis zu diesem Datum sollen alle Wörter gelernt sein. Daraus berechnet die App, wie viele Wörter du pro Tag schaffen musst.</p>
     <input type="date" id="dl" value="${esc(S.deadline)}" aria-label="Lernziel-Datum">
@@ -1261,6 +1253,14 @@ function renderAdd() {
     <input id="ab" autocomplete="off" enterkeyhint="done" placeholder="Deutsch, z. B. Freund" aria-label="Deutsch">
     <select id="alv" aria-label="Modul">${lvOpts(S.mod)}</select>
     <button class="btn primary" data-act="add-one">Hinzufügen</button></div></section>
+  <section class="panel${needsBackup() ? " warn" : ""}"><h2>Sicherung &amp; Dateien</h2>
+    <p class="help">Dein Fortschritt wird nach jeder Antwort und jeder Lektion automatisch auf diesem Gerät gespeichert. Exportiere ihn regelmäßig als Datei, damit er auch nach einem Gerätewechsel erhalten bleibt.</p>
+    <div class="stack">
+      <button class="btn primary" data-act="export-prog">Fortschritt exportieren</button>
+      <button class="btn ghost" data-act="import-prog">Fortschritt importieren</button>
+      <button class="btn ghost" data-act="load-vocab">Vokabeldatei laden</button>
+    </div>
+    <p class="status">${backupText()}</p></section>
   <section class="panel"><h2>App-Version</h2><p class="help">Version ${APP_VER}. Die App sucht beim Öffnen selbst nach Neuerungen. Falls etwas fehlt, kannst du hier das Update erzwingen. Dein Fortschritt bleibt dabei erhalten.</p><div class="stack"><button class="btn primary" data-act="app-update">Jetzt aktualisieren</button></div></section>
   <section class="panel"><div class="stack">
     <button class="btn ghost" data-act="restore-words">Originale Wörter wiederherstellen</button>
