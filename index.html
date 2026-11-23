@@ -51,7 +51,7 @@ header .in{max-width:560px;margin:0 auto;padding:14px 20px 10px;display:flex;ali
 h1{font-family:"Bricolage Grotesque",system-ui,sans-serif;font-weight:800;font-size:30px;letter-spacing:-.025em;margin:0;line-height:1}
 .hstats{display:flex;gap:8px}
 .stat{display:inline-flex;align-items:center;gap:5px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:5px 12px 5px 9px;font-weight:700;font-variant-numeric:tabular-nums}
-.stat.f svg{color:var(--flame)} .stat.x svg{color:var(--gold)} .stat.g svg{color:var(--gold)}
+.stat.f svg{color:var(--flame)} .stat.x svg{color:var(--gold)} .stat.g svg{color:var(--gold)} button.stat{font:inherit;font-weight:700;color:var(--ink);cursor:pointer}
 .stat.cold svg{color:var(--muted)}
 
 main{max-width:560px;margin:0 auto;padding:8px 20px calc(100px + env(safe-area-inset-bottom,0px))}
@@ -732,7 +732,7 @@ const lvOpts = sel => [1, 2, 3].map(l => `<option value="${l}" ${l === sel ? "se
 function render() {
   if (sess) return renderSession();
   const s = streak();
-  $("#hs").innerHTML = (curView === "gram" ? `<span class="stat g" aria-label="Sterne in der Grammatik">${ICON.star(16)}${Object.keys(S.gram || {}).filter(k => !/^(mix|m\d|s\d-\d+)$/.test(k)).reduce((a, k) => a + (S.gram[k].stars || 0), 0)}</span>` : "") + `<span class="stat f ${(S.days[today()] || 0) > 0 ? "" : "cold"}" aria-label="${s} Tage in Folge">${ICON.flame}${s}</span><span class="stat x" aria-label="${S.xp} XP">${ICON.bolt}${S.xp}</span>`;
+  $("#hs").innerHTML = (curView === "gram" ? `<button class="stat g" data-act="g-mix" aria-label="Grammatik-Mix">${ICON.star(16)}Mix</button>` : "") + `<span class="stat f ${(S.days[today()] || 0) > 0 ? "" : "cold"}" aria-label="${s} Tage in Folge">${ICON.flame}${s}</span><span class="stat x" aria-label="${S.xp} XP">${ICON.bolt}${S.xp}</span>`;
   document.querySelectorAll("nav.tabs button").forEach(b => b.dataset.v === (curView === "review" ? "list" : curView) ? b.setAttribute("aria-current", "page") : b.removeAttribute("aria-current"));
   const nErr = S.cards.filter(c => c.miss).length, tb = $('nav.tabs [data-v="list"]');
   tb.querySelector(".tabn")?.remove();
@@ -1123,7 +1123,6 @@ function renderGram() {
     if ((u + 1) * per >= L.length) h += '<div class="nw cpw"><button class="node cp ' + (tr ? "done" : allDone ? "" : "locked") + '" data-act="g-start" data-id="' + tk + '" aria-label="Modul-Test">' + ICON.trophy + '</button><span class="cpl">Modul-Test' + (tr ? '<br>Bestwert ' + tr.best + ' %' : "") + '</span></div>';
     h += '</div></section>';
   }
-  h += '<div class="stack" style="margin-top:26px"><button class="btn ghost wide" data-act="g-mix">Grammatik-Mix, 20 Fragen aus allem, was du schon gelernt hast</button></div>';
   v.innerHTML = h;
 }
 function renderGrSheet(v, l) {
