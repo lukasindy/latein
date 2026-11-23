@@ -1259,12 +1259,11 @@ function renderAdd() {
       <button class="btn primary" data-act="export-prog">Fortschritt exportieren</button>
       <button class="btn ghost" data-act="import-prog">Fortschritt importieren</button>
       <button class="btn ghost" data-act="load-vocab">Vokabeldatei laden</button>
+      <button class="btn ghost" data-act="restore-words">Originale Wörter wiederherstellen</button>
+      <button class="link danger" data-act="reset">Lernfortschritt zurücksetzen</button>
     </div>
     <p class="status">${backupText()}</p></section>
-  <section class="panel"><h2>App-Version</h2><p class="help">Version ${APP_VER}. Die App sucht beim Öffnen selbst nach Neuerungen. Falls etwas fehlt, kannst du hier das Update erzwingen. Dein Fortschritt bleibt dabei erhalten.</p><div class="stack"><button class="btn primary" data-act="app-update">Jetzt aktualisieren</button></div></section>
-  <section class="panel"><div class="stack">
-    <button class="btn ghost" data-act="restore-words">Originale Wörter wiederherstellen</button>
-    <button class="link danger" data-act="reset">Lernfortschritt zurücksetzen</button></div></section>`;
+  <section class="panel"><h2>App-Version</h2><p class="help">Version ${APP_VER}. Die App sucht beim Öffnen selbst nach Neuerungen. Falls etwas fehlt, kannst du hier das Update erzwingen. Dein Fortschritt bleibt dabei erhalten.</p><div class="stack"><button class="btn primary" data-act="app-update">Jetzt aktualisieren</button></div></section>`;
   $("#aa").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); $("#ab").focus(); } });
   $("#ab").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); addOne(); } });
   $("#dl").addEventListener("change", e => { if (e.target.value) { S.deadline = e.target.value; touch(); updateBadge(); toast(`Lernziel: ${fmtDate(S.deadline)}`); } });
